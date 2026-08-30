@@ -21,22 +21,12 @@ export type Category = (typeof categories)[number]['slug'];
 export const socialLinks = [
   {
     name: 'Instagram',
-    url: 'https://instagram.com/jessoneill',
+    url: 'https://www.instagram.com/jess.oneill/',
     icon: 'instagram',
   },
   {
     name: 'TikTok',
-    url: 'https://tiktok.com/@jessoneill',
+    url: 'https://www.tiktok.com/imjesschillin',
     icon: 'tiktok',
-  },
-  {
-    name: 'YouTube',
-    url: 'https://youtube.com/@jessoneill',
-    icon: 'youtube',
-  },
-  {
-    name: 'Pinterest',
-    url: 'https://pinterest.com/jessoneill',
-    icon: 'pinterest',
   },
 ] as const;
