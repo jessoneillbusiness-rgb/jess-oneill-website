@@ -25,8 +25,8 @@ Burnout doesn't announce itself. It creeps in — the irritability, the exhausti
 
 **A real Sunday.** No work. Farmers market, a long bath, cooking something that takes two hours.
 
-## The Abundance Mindset
+## The Slow Living Mindset
 
-Living abundantly isn't about having more — it's about being fully present for what you already have. This city offers infinite experiences, but you don't need to collect them all.
+Living well isn't about having more — it's about being fully present for what you already have. Life offers infinite experiences, but you don't need to collect them all.
 
 You just need to savor the ones that matter.

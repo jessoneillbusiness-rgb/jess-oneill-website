@@ -16,7 +16,7 @@ const recentPosts = allPosts.slice(1, 4);
   <section class="hero">
     <div class="container hero__content">
       <p class="hero__eyebrow">{site.tagline}</p>
-      <h1 class="hero__title">Live Abundantly,<br />Starting in NYC</h1>
+      <h1 class="hero__title">{site.heroTitle}</h1>
       <p class="hero__subtitle">
         {site.description}
       </p>
@@ -44,7 +44,7 @@ const recentPosts = allPosts.slice(1, 4);
       <div class="section__header">
         <p class="section__eyebrow">Explore</p>
         <h2 class="section__title">Browse by Category</h2>
-        <p class="section__desc">Travel adventures, food discoveries, beauty rituals, and everyday NYC living.</p>
+        <p class="section__desc">Travel adventures, food discoveries, beauty rituals, and everyday living.</p>
       </div>
       <nav class="category-nav" aria-label="Categories">
         {categories.map((cat) => (

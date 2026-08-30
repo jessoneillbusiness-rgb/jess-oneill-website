@@ -1,5 +1,5 @@
 ---
-import { categories } from '../config/site';
+import { categories, site } from '../config/site';
 
 const pathname = Astro.url.pathname;
 
@@ -11,8 +11,8 @@ const isActive = (href: string) => {
 
 <header class="site-header">
   <div class="container site-header__inner">
-    <a href="/" class="site-logo" aria-label="Abund NYC home">
-      Abund<span>NYC</span>
+    <a href="/" class="site-logo" aria-label={`${site.name} home`}>
+      Jess <span>O'Neill</span>
     </a>
 
     <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" id="nav-toggle">

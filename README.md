@@ -1,8 +1,8 @@
-# Abund NYC
+# Jess O'Neill
 
-A beautiful blog website for travel, food, beauty, and lifestyle content — built with [Astro](https://astro.build).
+A blog website for travel, food, beauty, and lifestyle content — built with [Astro](https://astro.build).
 
-**Live domain:** [www.abundnyc.com](https://www.abundnyc.com)
+**Live domain:** [www.jess-oneill.com](https://www.jess-oneill.com)
 
 ## Quick start
 
@@ -37,56 +37,48 @@ Your post content here in Markdown...
 
 Edit `src/config/site.ts` to update:
 
-- Site name, tagline, and description
+- Site name, tagline, hero title, and description
 - Email address
 - **Social media links** (Instagram, TikTok, YouTube, Pinterest)
 
 Replace placeholder social URLs with your real profile links.
 
-## Deploy for free
+## Deploy on Cloudflare Pages
 
-This site is a static site — no server or database needed. Recommended free hosts:
+This site is a static site — no server or database needed. Since you're moving **jess-oneill.com** to Cloudflare, Pages is the natural fit: free hosting, fast CDN, automatic SSL, and DNS managed in one place.
 
-| Platform | Best for | Free tier |
-|----------|----------|-----------|
-| **Cloudflare Pages** | Best overall (fast CDN, free SSL, custom domain) | Unlimited sites, 500 builds/month |
-| **Vercel** | Easiest GitHub integration | 100 GB bandwidth/month |
-| **Netlify** | Simple drag-and-drop or Git deploy | 100 GB bandwidth/month |
+### Step 1: Move your domain to Cloudflare
 
-### Recommended: Cloudflare Pages
+1. Create a free account at [cloudflare.com](https://cloudflare.com)
+2. Go to **Websites** → **Add a site** → enter `jess-oneill.com`
+3. Cloudflare will scan your existing DNS records — review and continue
+4. Cloudflare gives you two nameservers (e.g. `ada.ns.cloudflare.com`)
+5. At your current domain registrar, replace the nameservers with Cloudflare's
+6. Wait for activation (usually 24–48 hours, often faster)
 
-1. Push this project to a GitHub repository
-2. Sign up at [pages.cloudflare.com](https://pages.cloudflare.com)
-3. Click **Create a project** → connect your GitHub repo
+Once active, Cloudflare manages DNS, SSL, and security for your domain.
+
+### Step 2: Deploy the site to Cloudflare Pages
+
+1. Push this project to a **GitHub** repository
+2. In Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
+3. Select your repository
 4. Build settings:
    - **Framework preset:** Astro
    - **Build command:** `npm run build`
    - **Build output directory:** `dist`
 5. Click **Save and Deploy**
 
-### Connect your domain (www.abundnyc.com)
+Your site will be live at a `*.pages.dev` URL within a few minutes.
 
-**If your domain is on Cloudflare:**
+### Step 3: Connect www.jess-oneill.com
 
-1. In Cloudflare Pages → your project → **Custom domains**
-2. Add `abundnyc.com` and `www.abundnyc.com`
-3. DNS is configured automatically
+1. In your Pages project → **Custom domains** → **Set up a custom domain**
+2. Add `jess-oneill.com` and `www.jess-oneill.com`
+3. Because the domain is already on Cloudflare, DNS records are added automatically
+4. Cloudflare provisions a free SSL certificate — your site will be live at `https://www.jess-oneill.com`
 
-**If your domain is elsewhere (GoDaddy, Namecheap, etc.):**
-
-1. In your hosting platform, add `abundnyc.com` and `www.abundnyc.com` as custom domains
-2. The platform will give you DNS records (usually a CNAME for `www` pointing to their servers)
-3. In your domain registrar's DNS settings, add:
-   - `CNAME` record: `www` → `your-site.pages.dev` (or Vercel/Netlify URL)
-   - `A` or `CNAME` for root `@` → follow your host's instructions for apex domain
-4. Wait up to 48 hours for DNS propagation (usually much faster)
-
-### Alternative: Vercel
-
-1. Push to GitHub
-2. Sign up at [vercel.com](https://vercel.com) → **Import Project**
-3. Vercel auto-detects Astro — click **Deploy**
-4. Add custom domain under **Settings → Domains**
+**Tip:** Set `www.jess-oneill.com` as the primary domain and redirect the bare `jess-oneill.com` to it (Cloudflare Pages offers this option when adding both domains).
 
 ## Project structure
 
