@@ -1,0 +1,20 @@
+---
+import { site, socialLinks } from '../config/site';
+import SocialLinks from './SocialLinks.astro';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container">
+    <nav class="site-footer__links" aria-label="Footer navigation">
+      <a href="/blog">Journal</a>
+      <a href="/about">About</a>
+      <a href={`mailto:${site.email}`}>Contact</a>
+    </nav>
+    <SocialLinks variant="inline" />
+    <p style="margin-top: 1.5rem;">
+      &copy; {year} {site.name}. All rights reserved.
+    </p>
+  </div>
+</footer>

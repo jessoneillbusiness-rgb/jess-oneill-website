@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SocialLinks from '../components/SocialLinks.astro';
+import { site } from '../config/site';
+---
+
+<BaseLayout title="About" description={`About ${site.name} — travel, food, beauty, and lifestyle from New York City.`}>
+  <section class="section">
+    <div class="container about-grid">
+      <div
+        class="about-image"
+        role="img"
+        aria-label="Abund NYC creator portrait placeholder"
+        style="display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 3rem; color: var(--color-accent);"
+      >
+        Abund NYC
+      </div>
+      <div class="about-content">
+        <p class="section__eyebrow">About</p>
+        <h2>Hi, I'm so glad you're here</h2>
+        <p>
+          Welcome to Abund NYC — a space where I share the things I love most: discovering new
+          destinations, finding the best bites in the city, my beauty and wellness rituals, and
+          the everyday moments that make life feel full.
+        </p>
+        <p>
+          I'm based in New York City, but my curiosity takes me everywhere. This site is my
+          journal — a place for longer stories, detailed guides, and thoughts that don't fit in
+          a caption.
+        </p>
+        <p>
+          When I'm not writing here, you'll find me creating content for social media, exploring
+          a new neighborhood, or planning my next adventure. I'd love to connect — find me on
+          your favorite platform below.
+        </p>
+        <div style="margin-top: 2rem;">
+          <SocialLinks variant="inline" />
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,43 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { categories } from '../config/site';
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+}
+
+const { post } = Astro.props;
+const { title, description, category, pubDate, image, imageAlt } = post.data;
+const categoryLabel = categories.find((c) => c.slug === category)?.label ?? category;
+
+const formattedDate = pubDate.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+const defaultImage = `/images/categories/${category}.svg`;
+---
+
+<article class="post-card">
+  <a href={`/blog/${post.id}`} tabindex="-1" aria-hidden="true">
+    <img
+      class="post-card__image"
+      src={image ?? defaultImage}
+      alt={imageAlt ?? title}
+      loading="lazy"
+      width="400"
+      height="300"
+    />
+  </a>
+  <div class="post-card__body">
+    <div class="post-card__meta">
+      <span class="category-badge">{categoryLabel}</span>
+      <time datetime={pubDate.toISOString()}>{formattedDate}</time>
+    </div>
+    <h2 class="post-card__title">
+      <a href={`/blog/${post.id}`}>{title}</a>
+    </h2>
+    <p class="post-card__excerpt">{description}</p>
+  </div>
+</article>

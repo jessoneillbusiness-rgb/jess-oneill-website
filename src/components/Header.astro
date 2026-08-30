@@ -1,0 +1,50 @@
+---
+import { categories } from '../config/site';
+
+const pathname = Astro.url.pathname;
+
+const isActive = (href: string) => {
+  if (href === '/') return pathname === '/';
+  return pathname.startsWith(href);
+};
+---
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a href="/" class="site-logo" aria-label="Abund NYC home">
+      Abund<span>NYC</span>
+    </a>
+
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" id="nav-toggle">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+
+    <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+      <a href="/" aria-current={isActive('/') && pathname === '/' ? 'page' : undefined}>Home</a>
+      <a href="/blog" aria-current={isActive('/blog') ? 'page' : undefined}>Journal</a>
+      {categories.map((cat) => (
+        <a
+          href={`/category/${cat.slug}`}
+          aria-current={pathname === `/category/${cat.slug}` ? 'page' : undefined}
+        >
+          {cat.label}
+        </a>
+      ))}
+      <a href="/about" aria-current={isActive('/about') ? 'page' : undefined}>About</a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const toggle = document.getElementById('nav-toggle');
+  const nav = document.getElementById('site-nav');
+
+  toggle?.addEventListener('click', () => {
+    const isOpen = nav?.classList.toggle('is-open');
+    toggle.setAttribute('aria-expanded', String(isOpen));
+  });
+</script>

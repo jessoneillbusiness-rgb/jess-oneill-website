@@ -1,0 +1,88 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+import SocialLinks from '../components/SocialLinks.astro';
+import { getCollection } from 'astro:content';
+import { site, categories } from '../config/site';
+
+const allPosts = (await getCollection('posts', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const featuredPost = allPosts[0];
+const recentPosts = allPosts.slice(1, 4);
+---
+
+<BaseLayout>
+  <section class="hero">
+    <div class="container hero__content">
+      <p class="hero__eyebrow">{site.tagline}</p>
+      <h1 class="hero__title">Live Abundantly,<br />Starting in NYC</h1>
+      <p class="hero__subtitle">
+        {site.description}
+      </p>
+      <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+        <a href="/blog" class="btn btn--primary">Read the Journal</a>
+        <a href="/about" class="btn btn--outline">About Me</a>
+      </div>
+    </div>
+  </section>
+
+  {featuredPost && (
+    <section class="section">
+      <div class="container">
+        <div class="section__header">
+          <p class="section__eyebrow">Featured</p>
+          <h2 class="section__title">Latest Story</h2>
+        </div>
+        <PostCard post={featuredPost} />
+      </div>
+    </section>
+  )}
+
+  <section class="section" style="background: var(--color-surface);">
+    <div class="container">
+      <div class="section__header">
+        <p class="section__eyebrow">Explore</p>
+        <h2 class="section__title">Browse by Category</h2>
+        <p class="section__desc">Travel adventures, food discoveries, beauty rituals, and everyday NYC living.</p>
+      </div>
+      <nav class="category-nav" aria-label="Categories">
+        {categories.map((cat) => (
+          <a href={`/category/${cat.slug}`} class="category-pill">
+            {cat.label}
+          </a>
+        ))}
+      </nav>
+    </div>
+  </section>
+
+  {recentPosts.length > 0 && (
+    <section class="section">
+      <div class="container">
+        <div class="section__header">
+          <p class="section__eyebrow">Recent</p>
+          <h2 class="section__title">From the Journal</h2>
+        </div>
+        <div class="post-grid">
+          {recentPosts.map((post) => (
+            <PostCard post={post} />
+          ))}
+        </div>
+        <div class="text-center mt-3">
+          <a href="/blog" class="btn btn--dark">View All Posts</a>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="section social-section">
+    <div class="container">
+      <p class="section__eyebrow" style="color: var(--color-accent);">Connect</p>
+      <h2 class="section__title" style="color: #fff;">Follow Along</h2>
+      <p style="opacity: 0.8; max-width: 480px; margin-inline: auto;">
+        Join me on social for daily inspiration, behind-the-scenes moments, and real-time adventures.
+      </p>
+      <SocialLinks />
+    </div>
+  </section>
+</BaseLayout>
