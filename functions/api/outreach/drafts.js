@@ -33,18 +33,22 @@ export async function onRequestPost(context) {
 
     if (body.action === 'generate') {
       const contactIds = Array.isArray(body.contactIds) ? body.contactIds : [];
+      const regenerate = body.regenerate === true;
       const created = [];
 
       for (const contactId of contactIds) {
         const contact = contacts.find((item) => item.id === contactId);
         if (!contact) continue;
 
-        const existingPending = drafts.find(
+        const existingPendingIndex = drafts.findIndex(
           (item) => item.contactId === contactId && item.status === 'pending',
         );
-        if (existingPending) {
-          created.push(existingPending);
-          continue;
+        if (existingPendingIndex !== -1) {
+          if (!regenerate) {
+            created.push(drafts[existingPendingIndex]);
+            continue;
+          }
+          drafts.splice(existingPendingIndex, 1);
         }
 
         const template = await buildDraftEmail(contact, context.env);

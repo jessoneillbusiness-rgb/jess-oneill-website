@@ -140,28 +140,25 @@ async function ensureTestDraft() {
     }
   }
 
-  const pendingDraft = drafts.find(
-    (item) => item.contactEmail.toLowerCase() === testEmail && item.status === 'pending',
-  );
+  if (!contact) return;
 
-  if (!pendingDraft && contact) {
-    try {
-      await api('/api/outreach/drafts', {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'generate',
-          contactIds: [contact.id],
-        }),
-      });
-      const draftsRes = await api<{ drafts: Draft[] }>('/api/outreach/drafts');
-      drafts = draftsRes.drafts;
-      renderDrafts();
-      renderSent();
-      activateTab('drafts');
-      showAlert('Test draft for Matthew is ready in Pending drafts.');
-    } catch {
-      // ignore seed failures during setup
-    }
+  try {
+    await api('/api/outreach/drafts', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'generate',
+        contactIds: [contact.id],
+        regenerate: true,
+      }),
+    });
+    const draftsRes = await api<{ drafts: Draft[] }>('/api/outreach/drafts');
+    drafts = draftsRes.drafts;
+    renderDrafts();
+    renderSent();
+    activateTab('drafts');
+    showAlert('Test draft for Matthew is ready in Pending drafts.');
+  } catch {
+    // ignore seed failures during setup
   }
 }
 
