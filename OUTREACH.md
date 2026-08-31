@@ -17,16 +17,20 @@ This is intentionally **not** fully automated. You stay in control of who you co
 
 ### 1. Create a KV namespace
 
-1. Cloudflare dashboard → **Workers & Pages** → **KV**
-2. **Create a namespace** (e.g. `jess-outreach`)
-3. Copy the namespace ID
+1. Cloudflare dashboard → **Workers & Pages** (left sidebar)
+2. Click **KV** in the submenu (or go to **Storage & databases** → **Workers KV**)
+3. Click **Create a namespace**
+4. Name it `jess-outreach` → **Add**
 
 ### 2. Bind KV to your Pages project
 
-1. Pages project → **Settings** → **Functions** → **KV namespace bindings**
-2. Add binding:
-   - **Variable name:** `OUTREACH_KV`
-   - **KV namespace:** the one you created
+1. Go to **Workers & Pages** → your **jess-oneill-website** project
+2. **Settings** → **Bindings** (under Build)
+3. Click **Add** → choose **KV namespace**
+4. Set **Variable name** to exactly: `OUTREACH_KV`
+5. Select your `jess-outreach` namespace → **Save**
+
+> **Note:** If bindings were locked by `wrangler.toml`, that has been removed so you can manage this in the dashboard.
 
 ### 3. Add environment variables
 
