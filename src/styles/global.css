@@ -356,6 +356,22 @@ p {
   border-color: #fff;
 }
 
+.btn--outline-dark {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-text);
+}
+
+.btn--outline-dark:hover {
+  background: var(--color-text);
+  color: #fff;
+}
+
+.btn--outline-dark:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .btn--dark {
   background: var(--color-text);
   color: #fff;
@@ -825,6 +841,13 @@ p {
   line-height: 1.65;
 }
 
+.media-kit-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
 .media-kit-total {
   text-align: center;
   margin-bottom: 2.5rem;
@@ -980,6 +1003,10 @@ p {
 }
 
 .media-kit-cta__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
   margin: 2rem 0 1.5rem;
 }
 

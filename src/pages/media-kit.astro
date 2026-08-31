@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import MediaKitDownload from '../components/MediaKitDownload.astro';
 import { mediaKit } from '../config/media-kit';
 import { socialChannels } from '../config/site';
 ---
@@ -13,9 +14,12 @@ import { socialChannels } from '../config/site';
       <p class="section__eyebrow">For Brands & PR</p>
       <h1 class="media-kit-hero__title">{mediaKit.headline}</h1>
       <p class="media-kit-hero__desc">{mediaKit.subheadline}</p>
-      <a href={`mailto:${mediaKit.contactEmail}?subject=Partnership%20Inquiry`} class="btn btn--primary">
-        Get in Touch
-      </a>
+      <div class="media-kit-hero__actions">
+        <a href={`mailto:${mediaKit.contactEmail}?subject=Partnership%20Inquiry`} class="btn btn--primary">
+          Get in Touch
+        </a>
+        <MediaKitDownload />
+      </div>
     </div>
   </section>
 
@@ -83,6 +87,7 @@ import { socialChannels } from '../config/site';
         <a href={`mailto:${mediaKit.contactEmail}?subject=Partnership%20Inquiry`} class="btn btn--primary">
           {mediaKit.contactEmail}
         </a>
+        <MediaKitDownload variant="dark" />
       </div>
       <div class="media-kit-socials">
         {socialChannels.map((channel) => (
