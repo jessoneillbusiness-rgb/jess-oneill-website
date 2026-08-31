@@ -1,4 +1,6 @@
 import { MEDIA_KIT_LINK_TEXT, MEDIA_KIT_URL } from './outreach-media-kit.js';
+import { getMediaMetrics } from './media-metrics.js';
+import { buildMetricsIntroParagraph } from './outreach-metrics-summary.js';
 
 const TIKTOK_URL = 'https://www.tiktok.com/@imjesschillin';
 const INSTAGRAM_URL = 'https://www.instagram.com/jess.oneill';
@@ -85,7 +87,7 @@ function renderHtmlLine(line) {
   return escapeHtml(line);
 }
 
-export function buildDraftEmail(contact) {
+export async function buildDraftEmail(contact, env = {}) {
   const firstName = contact.name?.trim().split(/\s+/)[0] || 'there';
   const company = contact.company?.trim() || 'your team';
   const category = contact.category?.trim();
@@ -96,11 +98,19 @@ export function buildDraftEmail(contact) {
 
   const subject = `Partnership enquiry — Jess O'Neill x ${company}`;
 
+  let introParagraph;
+  try {
+    const metrics = await getMediaMetrics(env);
+    introParagraph = buildMetricsIntroParagraph(metrics);
+  } catch {
+    introParagraph = buildMetricsIntroParagraph(null);
+  }
+
   const body = `Hi ${firstName},
 
-${categoryLine}
+${introParagraph}
 
-I'm Jess O'Neill, a NYC-based creator focused on travel, food, beauty, and lifestyle. I share polished, relatable content with an engaged audience across Instagram, TikTok, Facebook, and my site.
+${categoryLine}
 
 My media kit includes audience stats, platform info, and collaboration options:
 ${MEDIA_KIT_LINK_TEXT}

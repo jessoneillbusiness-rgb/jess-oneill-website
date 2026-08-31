@@ -47,7 +47,7 @@ export async function onRequestPost(context) {
           continue;
         }
 
-        const template = buildDraftEmail(contact);
+        const template = await buildDraftEmail(contact, context.env);
         const draft = {
           id: newId(),
           contactId,
