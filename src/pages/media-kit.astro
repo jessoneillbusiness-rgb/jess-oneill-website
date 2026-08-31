@@ -10,13 +10,34 @@ import { socialChannels } from '../config/site';
   description="Work with Jess O'Neill — audience metrics, platform stats, and collaboration info for brands and PR."
 >
   <section class="media-kit-gate" id="media-kit-gate">
-    <div class="container">
+    <div class="container media-kit-gate__layout">
+      <div class="media-kit-gate__preview">
+        <p class="section__eyebrow">Audience Snapshot</p>
+        <h1 class="media-kit-gate__preview-title">Why brands work with Jess</h1>
+        <p class="media-kit-gate__preview-desc">
+          A quick look at cross-platform reach. Enter your email on the right for the full media kit,
+          platform breakdowns, and collaboration options.
+        </p>
+
+        <div class="media-kit-gate__preview-total">
+          <p class="media-kit-gate__preview-total-label">Total cross-platform audience</p>
+          <p class="media-kit-gate__preview-total-value" id="media-kit-preview-total">…</p>
+        </div>
+
+        <div class="media-kit-gate__preview-grid" id="media-kit-preview-platforms">
+          <p class="media-kit-gate__preview-footnote">Loading audience highlights…</p>
+        </div>
+
+        <p class="media-kit-gate__preview-footnote">
+          Full stats, engagement metrics, and partnership details unlock after email access.
+        </p>
+      </div>
+
       <div class="media-kit-gate__card">
-        <p class="section__eyebrow">Media Kit</p>
-        <h1 class="media-kit-gate__title">View Jess O'Neill's Media Kit</h1>
+        <p class="section__eyebrow">Media Kit Access</p>
+        <h2 class="media-kit-gate__title">Get the full media kit</h2>
         <p class="media-kit-gate__desc">
-          Enter your email for instant access to audience stats, platform metrics, and collaboration info.
-          Perfect for brands, PR teams, and partners.
+          Instant access for brands, PR teams, and partners. Just your email is required.
         </p>
 
         <form class="media-kit-gate__form" id="media-kit-gate-form">
@@ -26,12 +47,12 @@ import { socialChannels } from '../config/site';
           </label>
 
           <label class="media-kit-gate__field">
-            <span>Name</span>
+            <span>Name <em class="media-kit-gate__optional">(optional)</em></span>
             <input type="text" name="name" autocomplete="name" placeholder="Your name" />
           </label>
 
           <label class="media-kit-gate__field">
-            <span>Company</span>
+            <span>Brand <em class="media-kit-gate__optional">(optional)</em></span>
             <input type="text" name="company" autocomplete="organization" placeholder="Brand or agency" />
           </label>
 

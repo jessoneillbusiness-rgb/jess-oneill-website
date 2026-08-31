@@ -1,5 +1,5 @@
 import {
-  createAccessCookieHeaders,
+  createAccessCookieHeader,
   hasMediaKitAccess,
   json,
   normalizeSubscriberEmail,
@@ -41,22 +41,19 @@ export async function onRequestPost(context) {
       newsletter: body.newsletter === true,
     });
 
-    const cookies = await createAccessCookieHeaders(email, context.env);
-    const headers = new Headers({ 'Content-Type': 'application/json' });
-    for (const cookie of cookies) {
-      headers.append('Set-Cookie', cookie);
-    }
+    const cookie = await createAccessCookieHeader(email, context.env);
 
-    return new Response(
-      JSON.stringify({
+    return json(
+      {
         ok: true,
         hasAccess: true,
         subscriber: {
           email: subscriber.email,
           newsletter: subscriber.newsletter,
         },
-      }),
-      { status: 200, headers },
+      },
+      200,
+      { 'Set-Cookie': cookie },
     );
   } catch (error) {
     return json({ error: error.message || 'Could not grant access' }, 400);

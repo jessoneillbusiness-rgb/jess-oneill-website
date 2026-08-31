@@ -48,7 +48,13 @@ export async function addMediaKitSubscriber(env, input) {
     : [...subscribers, record];
 
   await writeJson(kv, SUBSCRIBERS_KEY, next);
-  await syncOutreachContact(env, record);
+
+  try {
+    await syncOutreachContact(env, record);
+  } catch {
+    // Subscriber saved — outreach sync is best-effort and must not block unlock.
+  }
+
   return record;
 }
 

@@ -1,5 +1,4 @@
-const COOKIE_EMAIL = 'media_kit_email';
-const COOKIE_TOKEN = 'media_kit_token';
+const COOKIE_NAME = 'media_kit_access';
 const ACCESS_MAX_AGE = 60 * 60 * 24 * 365;
 
 function parseCookies(header) {
@@ -7,7 +6,7 @@ function parseCookies(header) {
   return Object.fromEntries(
     header.split(';').map((part) => {
       const [key, ...rest] = part.trim().split('=');
-      return [key, decodeURIComponent(rest.join('='))];
+      return [key, rest.join('=')];
     }),
   );
 }
@@ -32,32 +31,41 @@ export function normalizeSubscriberEmail(email) {
   return value;
 }
 
+function parseAccessCookie(raw) {
+  if (!raw) return null;
+  const pipeIndex = raw.lastIndexOf('|');
+  if (pipeIndex <= 0) return null;
+
+  try {
+    const email = decodeURIComponent(raw.slice(0, pipeIndex)).toLowerCase();
+    const token = raw.slice(pipeIndex + 1);
+    if (!email || !token) return null;
+    return { email, token };
+  } catch {
+    return null;
+  }
+}
+
 export async function hasMediaKitAccess(request, env) {
   if (!env.OUTREACH_KV) return true;
 
   const cookies = parseCookies(request.headers.get('Cookie'));
-  const email = cookies[COOKIE_EMAIL];
-  const token = cookies[COOKIE_TOKEN];
-  if (!email || !token) return false;
+  const parsed = parseAccessCookie(cookies[COOKIE_NAME]);
+  if (!parsed) return false;
 
   try {
-    const expected = await accessToken(email, env);
-    return token === expected;
+    const expected = await accessToken(parsed.email, env);
+    return parsed.token === expected;
   } catch {
     return false;
   }
 }
 
-export async function createAccessCookieHeaders(email, env) {
+export async function createAccessCookieHeader(email, env) {
   const normalized = normalizeSubscriberEmail(email);
   const token = await accessToken(normalized, env);
-  const secure = 'Secure';
-  const base = `Path=/; HttpOnly; ${secure}; SameSite=Lax; Max-Age=${ACCESS_MAX_AGE}`;
-
-  return [
-    `${COOKIE_EMAIL}=${encodeURIComponent(normalized)}; ${base}`,
-    `${COOKIE_TOKEN}=${token}; ${base}`,
-  ];
+  const value = `${encodeURIComponent(normalized)}|${token}`;
+  return `${COOKIE_NAME}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${ACCESS_MAX_AGE}`;
 }
 
 export function accessDeniedResponse() {
@@ -73,6 +81,10 @@ export function accessDeniedResponse() {
 export function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json', ...extraHeaders },
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
+      ...extraHeaders,
+    },
   });
 }
