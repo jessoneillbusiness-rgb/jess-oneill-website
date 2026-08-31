@@ -58,7 +58,15 @@ async function api<T>(url: string, options: RequestInit = {}): Promise<T> {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error || 'Request failed');
+    const details =
+      typeof data.details === 'object' && data.details !== null
+        ? data.details.message || JSON.stringify(data.details)
+        : '';
+    const hint = typeof data.hint === 'string' ? data.hint : '';
+    const message = [data.error, details, hint, `HTTP ${response.status}`]
+      .filter(Boolean)
+      .join(' — ');
+    throw new Error(message || 'Request failed');
   }
   return data as T;
 }

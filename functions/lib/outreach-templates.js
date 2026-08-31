@@ -1,6 +1,18 @@
 import { MEDIA_KIT_LINK_TEXT, MEDIA_KIT_URL } from './outreach-media-kit.js';
 
 const BUSINESS_EMAIL = 'jessoneill.business@gmail.com';
+const LINK_LINE_ALIASES = [
+  MEDIA_KIT_LINK_TEXT,
+  "View Jess O'Neill's Media Kit",
+  'View Jess O\'Neill\'s Media Kit',
+  'View my media kit',
+];
+
+function isMediaKitLinkLine(line) {
+  const trimmed = line.trim();
+  if (trimmed === MEDIA_KIT_URL) return true;
+  return LINK_LINE_ALIASES.some((alias) => trimmed === alias);
+}
 
 export function buildDraftEmail(contact) {
   const firstName = contact.name?.trim().split(/\s+/)[0] || 'there';
@@ -44,7 +56,7 @@ export function formatPlainTextEmail(body) {
   const lines = normaliseBody(body).split('\n');
   return lines
     .map((line) => {
-      if (line.trim() === MEDIA_KIT_LINK_TEXT) {
+      if (isMediaKitLinkLine(line)) {
         return `${MEDIA_KIT_LINK_TEXT}: ${MEDIA_KIT_URL}`;
       }
       return line;
@@ -57,7 +69,7 @@ export function buildHtmlEmail(body) {
     .split('\n')
     .map((line) => {
       const trimmed = line.trim();
-      if (trimmed === MEDIA_KIT_LINK_TEXT) {
+      if (isMediaKitLinkLine(trimmed)) {
         return `<p><a href="${MEDIA_KIT_URL}" style="color: #0abab5; font-weight: 600;">${MEDIA_KIT_LINK_TEXT}</a></p>`;
       }
       if (trimmed.startsWith('www.')) {
