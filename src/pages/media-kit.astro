@@ -1,0 +1,211 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { mediaKit } from '../config/media-kit';
+import { socialChannels } from '../config/site';
+---
+
+<BaseLayout
+  title="Media Kit"
+  description="Work with Jess O'Neill — audience metrics, platform stats, and collaboration info for brands and PR."
+>
+  <section class="media-kit-hero">
+    <div class="container media-kit-hero__inner">
+      <p class="section__eyebrow">For Brands & PR</p>
+      <h1 class="media-kit-hero__title">{mediaKit.headline}</h1>
+      <p class="media-kit-hero__desc">{mediaKit.subheadline}</p>
+      <a href={`mailto:${mediaKit.contactEmail}?subject=Partnership%20Inquiry`} class="btn btn--primary">
+        Get in Touch
+      </a>
+    </div>
+  </section>
+
+  <section class="section media-kit-stats">
+    <div class="container">
+      <div class="section__header" style="border-bottom: none; padding-bottom: 0;">
+        <p class="section__eyebrow">Live Stats</p>
+        <h2 class="section__title">Audience at a Glance</h2>
+        <p class="section__desc" id="media-kit-updated"></p>
+      </div>
+
+      <div class="media-kit-total">
+        <p class="media-kit-total__label">Total Cross-Platform Audience</p>
+        <p class="media-kit-total__value" id="total-audience">…</p>
+      </div>
+
+      <div class="media-kit-platforms" id="media-kit-platforms">
+        <p class="media-kit-loading">Loading latest metrics…</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background: var(--color-surface); border-top: 1px solid var(--color-border);">
+    <div class="container media-kit-split">
+      <div>
+        <p class="section__eyebrow">Audience</p>
+        <h2 class="section__title" style="text-align: left; font-size: 2rem;">Who Follows Along</h2>
+        <p class="media-kit-text">{mediaKit.audience.summary}</p>
+        <ul class="media-kit-list">
+          {mediaKit.audience.highlights.map((item) => (
+            <li>{item}</li>
+          ))}
+        </ul>
+        <p class="media-kit-meta">
+          <strong>Location:</strong> {mediaKit.location}<br />
+          <strong>Niches:</strong> {mediaKit.niches.join(' · ')}
+        </p>
+      </div>
+      <div>
+        <p class="section__eyebrow">Collaborations</p>
+        <h2 class="section__title" style="text-align: left; font-size: 2rem;">What I Offer</h2>
+        <div class="media-kit-offerings">
+          {mediaKit.offerings.map((group) => (
+            <div class="media-kit-offering">
+              <h3>{group.title}</h3>
+              <ul>
+                {group.items.map((item) => (
+                  <li>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section media-kit-cta">
+    <div class="container media-kit-cta__inner">
+      <h2 class="section__title">Let's Create Something Together</h2>
+      <p class="section__desc">
+        For partnerships, press, and campaign enquiries, reach out directly.
+      </p>
+      <div class="media-kit-cta__actions">
+        <a href={`mailto:${mediaKit.contactEmail}?subject=Partnership%20Inquiry`} class="btn btn--primary">
+          {mediaKit.contactEmail}
+        </a>
+      </div>
+      <div class="media-kit-socials">
+        {socialChannels.map((channel) => (
+          <a href={channel.url} target="_blank" rel="noopener noreferrer">{channel.name}</a>
+        ))}
+      </div>
+      <p class="media-kit-note">{mediaKit.pressNote}</p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  function formatNumber(value) {
+    if (value === null || value === undefined) return '—';
+    return new Intl.NumberFormat('en-US').format(value);
+  }
+
+  function formatCompact(value) {
+    if (value === null || value === undefined) return '—';
+    return new Intl.NumberFormat('en-US', {
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(value);
+  }
+
+  function metricRow(label, value, compact = false) {
+    if (value === null || value === undefined || value === '') return '';
+    const display =
+      typeof value === 'string'
+        ? value
+        : compact
+          ? formatCompact(value)
+          : formatNumber(value);
+    return `
+      <div class="media-kit-metric">
+        <span class="media-kit-metric__label">${label}</span>
+        <span class="media-kit-metric__value">${display}</span>
+      </div>
+    `;
+  }
+
+  function renderPlatform(name, handle, url, metrics, insightRows) {
+    const rows = [
+      metricRow('Followers', metrics.followers, true),
+      metrics.posts != null ? metricRow('Posts', metrics.posts) : '',
+      metrics.videos != null ? metricRow('Videos', metrics.videos) : '',
+      metrics.totalLikes != null ? metricRow('Total Likes', metrics.totalLikes, true) : '',
+      metrics.following != null ? metricRow('Following', metrics.following) : '',
+      ...insightRows,
+    ].join('');
+
+    return `
+      <article class="media-kit-platform">
+        <header class="media-kit-platform__header">
+          <h3>${name}</h3>
+          <a href="${url}" target="_blank" rel="noopener noreferrer">@${handle}</a>
+        </header>
+        <div class="media-kit-platform__metrics">${rows || '<p class="media-kit-metric__empty">Stats unavailable</p>'}</div>
+      </article>
+    `;
+  }
+
+  async function loadMediaMetrics() {
+    const container = document.getElementById('media-kit-platforms');
+    const totalEl = document.getElementById('total-audience');
+    const updatedEl = document.getElementById('media-kit-updated');
+
+    try {
+      const response = await fetch('/api/media-metrics');
+      if (!response.ok) throw new Error('Failed to load');
+      const data = await response.json();
+
+      if (totalEl) {
+        totalEl.textContent = data.totals.audience
+          ? formatNumber(data.totals.audience)
+          : '—';
+      }
+
+      if (updatedEl && data.updatedAt) {
+        const date = new Date(data.updatedAt);
+        updatedEl.textContent = `Automatically updated ${date.toLocaleString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        })}`;
+      }
+
+      const ig = data.platforms.instagram ?? {};
+      const tt = data.platforms.tiktok ?? {};
+      const fb = data.platforms.facebook ?? {};
+
+      const igInsights = [
+        ig.insights?.avgReach != null ? metricRow('Avg. Reach / Post', ig.insights.avgReach, true) : '',
+        ig.insights?.avgEngagement != null ? metricRow('Avg. Engagement', `${ig.insights.avgEngagement}%`) : '',
+        ig.insights?.monthlyViews != null ? metricRow('Monthly Views', ig.insights.monthlyViews, true) : '',
+      ].join('');
+
+      const ttInsights = [
+        tt.insights?.avgViews != null ? metricRow('Avg. Views / Video', tt.insights.avgViews, true) : '',
+        tt.insights?.avgEngagement != null ? metricRow('Avg. Engagement', `${tt.insights.avgEngagement}%`) : '',
+        tt.insights?.monthlyViews != null ? metricRow('Monthly Views', tt.insights.monthlyViews, true) : '',
+      ].join('');
+
+      const fbInsights = [
+        fb.insights?.monthlyReach != null ? metricRow('Monthly Reach', fb.insights.monthlyReach, true) : '',
+        fb.insights?.pageViews != null ? metricRow('Page Views', fb.insights.pageViews, true) : '',
+      ].join('');
+
+      if (container) {
+        container.innerHTML = [
+          renderPlatform('Instagram', 'jess.oneill', 'https://www.instagram.com/jess.oneill/', ig, igInsights),
+          renderPlatform('TikTok', 'imjesschillin', 'https://www.tiktok.com/@imjesschillin', tt, ttInsights),
+          renderPlatform('Facebook', 'Jess-Oneill', 'https://www.facebook.com/people/Jess-Oneill/61575124581812/', fb, fbInsights),
+        ].join('');
+      }
+    } catch {
+      if (container) {
+        container.innerHTML = '<p class="media-kit-loading">Unable to load metrics right now. Please email for the latest stats.</p>';
+      }
+    }
+  }
+
+  loadMediaMetrics();
+</script>
