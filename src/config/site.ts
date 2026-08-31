@@ -30,7 +30,7 @@ export const socialChannels = [
   {
     id: 'tiktok',
     name: 'TikTok',
-    url: 'https://www.tiktok.com/imjesschillin',
+    url: 'https://www.tiktok.com/@imjesschillin',
     username: 'imjesschillin',
     icon: 'tiktok',
   },
