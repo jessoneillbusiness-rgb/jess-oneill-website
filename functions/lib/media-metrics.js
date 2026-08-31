@@ -3,6 +3,8 @@
  * Reach/impressions require Meta/TikTok Business API tokens via env vars.
  */
 
+import { resolveFacebookFollowers } from './social-config.js';
+
 const FACEBOOK_PAGE_ID = '61575124581812';
 const INSTAGRAM_USERNAME = 'jess.oneill';
 const TIKTOK_USERNAME = 'imjesschillin';
@@ -144,7 +146,7 @@ async function fetchFacebook(env) {
     }
   }
 
-  const manual = envNumber(env, 'FACEBOOK_FOLLOWER_COUNT');
+  const manual = resolveFacebookFollowers(env);
   return manual !== null ? { followers: manual, pageId } : null;
 }
 

@@ -25,7 +25,7 @@ async function writeJson(kv, key, value) {
   await kv.put(key, JSON.stringify(value));
 }
 
-export async function addMediaKitSubscriber(env, input) {
+export async function saveMediaKitSubscriber(env, input) {
   const kv = requireKv(env);
   const subscribers = await readJson(kv, SUBSCRIBERS_KEY, []);
   const email = input.email.toLowerCase();
@@ -48,17 +48,10 @@ export async function addMediaKitSubscriber(env, input) {
     : [...subscribers, record];
 
   await writeJson(kv, SUBSCRIBERS_KEY, next);
-
-  try {
-    await syncOutreachContact(env, record);
-  } catch {
-    // Subscriber saved — outreach sync is best-effort and must not block unlock.
-  }
-
   return record;
 }
 
-async function syncOutreachContact(env, subscriber) {
+export async function syncOutreachContact(env, subscriber) {
   const contacts = await listContacts(env);
   const index = contacts.findIndex((item) => item.email === subscriber.email);
 
@@ -89,6 +82,16 @@ async function syncOutreachContact(env, subscriber) {
   }
 
   await saveContacts(env, contacts);
+}
+
+export async function addMediaKitSubscriber(env, input) {
+  const record = await saveMediaKitSubscriber(env, input);
+  try {
+    await syncOutreachContact(env, record);
+  } catch {
+    // best-effort
+  }
+  return record;
 }
 
 export async function listMediaKitSubscribers(env) {

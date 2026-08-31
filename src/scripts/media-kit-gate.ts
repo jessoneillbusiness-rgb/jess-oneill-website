@@ -29,9 +29,32 @@ const submitBtn = document.getElementById('media-kit-gate-submit') as HTMLButton
 const previewTotalEl = document.getElementById('media-kit-preview-total')!;
 const previewPlatformsEl = document.getElementById('media-kit-preview-platforms')!;
 
+const SUBMIT_LABEL = 'View Media Kit';
+
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+function resetSubmitButton() {
+  submitBtn.disabled = false;
+  submitBtn.textContent = SUBMIT_LABEL;
+}
+
 function showContent() {
   gateEl.hidden = true;
   contentEl.hidden = false;
+  gateEl.style.display = 'none';
+  contentEl.style.display = '';
   window.scrollTo({ top: 0, behavior: 'smooth' });
   document.dispatchEvent(new CustomEvent('media-kit:unlocked'));
 }
@@ -60,7 +83,7 @@ function platformLine(name: string, platform: PreviewPlatform | null) {
 
 async function loadPreviewMetrics() {
   try {
-    const response = await fetch('/api/media-kit/preview-metrics');
+    const response = await fetchWithTimeout('/api/media-kit/preview-metrics');
     if (!response.ok) throw new Error('Failed to load preview metrics');
     const data = (await response.json()) as PreviewMetrics;
 
@@ -84,7 +107,7 @@ async function loadPreviewMetrics() {
 
 async function checkAccess() {
   try {
-    const response = await fetch('/api/media-kit/access', {
+    const response = await fetchWithTimeout('/api/media-kit/access', {
       credentials: 'same-origin',
       cache: 'no-store',
     });
@@ -98,7 +121,9 @@ async function checkAccess() {
   }
 
   gateEl.hidden = false;
+  gateEl.style.display = '';
   contentEl.hidden = true;
+  contentEl.style.display = 'none';
   return false;
 }
 
@@ -118,7 +143,7 @@ formEl.addEventListener('submit', async (event) => {
   submitBtn.textContent = 'Unlocking…';
 
   try {
-    const response = await fetch('/api/media-kit/access', {
+    const response = await fetchWithTimeout('/api/media-kit/access', {
       method: 'POST',
       credentials: 'same-origin',
       cache: 'no-store',
@@ -131,6 +156,11 @@ formEl.addEventListener('submit', async (event) => {
       throw new Error(data.error || 'Could not unlock the media kit');
     }
 
+    if (data.ok && data.hasAccess) {
+      showContent();
+      return;
+    }
+
     const verified = await checkAccess();
     if (!verified) {
       throw new Error(
@@ -138,9 +168,15 @@ formEl.addEventListener('submit', async (event) => {
       );
     }
   } catch (error) {
-    showError(error instanceof Error ? error.message : 'Could not unlock the media kit');
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'View Media Kit';
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      showError('That took too long. Please try again.');
+    } else {
+      showError(error instanceof Error ? error.message : 'Could not unlock the media kit');
+    }
+  } finally {
+    if (!gateEl.hidden) {
+      resetSubmitButton();
+    }
   }
 });
 

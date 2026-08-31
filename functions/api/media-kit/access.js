@@ -4,7 +4,7 @@ import {
   json,
   normalizeSubscriberEmail,
 } from '../../lib/media-kit-access.js';
-import { addMediaKitSubscriber } from '../../lib/subscriber-store.js';
+import { saveMediaKitSubscriber, syncOutreachContact } from '../../lib/subscriber-store.js';
 
 export async function onRequestGet(context) {
   const hasAccess = await hasMediaKitAccess(context.request, context.env);
@@ -34,12 +34,16 @@ export async function onRequestPost(context) {
 
   try {
     const email = normalizeSubscriberEmail(body.email);
-    const subscriber = await addMediaKitSubscriber(context.env, {
+    const subscriber = await saveMediaKitSubscriber(context.env, {
       email,
       name: body.name,
       company: body.company,
       newsletter: body.newsletter === true,
     });
+
+    if (typeof context.waitUntil === 'function') {
+      context.waitUntil(syncOutreachContact(context.env, subscriber).catch(() => {}));
+    }
 
     const cookie = await createAccessCookieHeader(email, context.env);
 

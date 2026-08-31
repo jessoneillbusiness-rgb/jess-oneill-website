@@ -3,6 +3,8 @@
  * Refreshes from Instagram, TikTok, and Facebook — cached up to 1 hour.
  */
 
+import { resolveFacebookFollowers } from '../lib/social-config.js';
+
 const FACEBOOK_PAGE_ID = '61575124581812';
 const INSTAGRAM_USERNAME = 'jess.oneill';
 
@@ -164,12 +166,8 @@ async function fetchFacebook(env) {
     }
   }
 
-  // Set in Cloudflare → Settings → Environment variables (no Meta developer account needed)
-  const manual = env.FACEBOOK_FOLLOWER_COUNT;
-  if (manual) {
-    const parsed = Number.parseInt(manual, 10);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
+  const manual = resolveFacebookFollowers(env);
+  if (manual !== null) return manual;
 
   return null;
 }
