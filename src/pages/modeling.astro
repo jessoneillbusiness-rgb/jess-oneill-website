@@ -1,0 +1,127 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { modelingProfile } from '../config/modeling';
+import { site } from '../config/site';
+
+const measurementEntries = Object.entries(modelingProfile.measurements).filter(([, value]) => value);
+const measurementLabels: Record<string, string> = {
+  height: 'Height',
+  bust: 'Bust',
+  waist: 'Waist',
+  hips: 'Hips',
+  dress: 'Dress',
+  shoe: 'Shoe',
+  hair: 'Hair',
+  eyes: 'Eyes',
+};
+---
+
+<BaseLayout
+  title="Modeling"
+  description={`${site.name} modeling portfolio — measurements, details, and previous work.`}
+>
+  <section class="modeling-hero">
+    <div class="container modeling-hero__inner">
+      <p class="section__eyebrow">Portfolio</p>
+      <h1 class="modeling-hero__title">{modelingProfile.headline}</h1>
+      <p class="modeling-hero__desc">{modelingProfile.subheadline}</p>
+    </div>
+  </section>
+
+  <section class="section modeling-details">
+    <div class="container">
+      <div class="modeling-details__grid">
+        <div class="modeling-details__intro">
+          <h2 class="modeling-details__heading">Profile & Measurements</h2>
+          <p class="modeling-details__text">{modelingProfile.intro}</p>
+          {modelingProfile.representedBy && (
+            <p class="modeling-details__meta">
+              <strong>Represented by:</strong> {modelingProfile.representedBy}
+            </p>
+          )}
+          <div class="modeling-details__actions">
+            <a
+              href={`mailto:${modelingProfile.bookingEmail}?subject=Modeling%20Booking%20Enquiry`}
+              class="btn btn--primary"
+            >
+              Bookings & Enquiries
+            </a>
+            <a href="/contact" class="btn btn--outline-dark">Contact</a>
+          </div>
+        </div>
+
+        <div class="modeling-stats">
+          <h3 class="modeling-stats__title">Measurements</h3>
+          <dl class="modeling-stats__list">
+            {measurementEntries.map(([key, value]) => (
+              <div class="modeling-stats__row">
+                <dt>{measurementLabels[key] ?? key}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        <div class="modeling-stats">
+          <h3 class="modeling-stats__title">Details</h3>
+          <dl class="modeling-stats__list">
+            {modelingProfile.details.map((item) => (
+              <div class="modeling-stats__row">
+                <dt>{item.label}</dt>
+                <dd>{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section modeling-portfolio">
+    <div class="container">
+      <div class="section__header">
+        <p class="section__eyebrow">Previous Work</p>
+        <h2 class="section__title">Portfolio</h2>
+        <p class="section__desc">
+          A selection of editorial, commercial, beauty, and lifestyle work.
+        </p>
+      </div>
+
+      {modelingProfile.portfolio.length > 0 ? (
+        <div class="modeling-gallery">
+          {modelingProfile.portfolio.map((item) => (
+            <figure class="modeling-gallery__item">
+              <div class="modeling-gallery__media">
+                <img src={item.src} alt={item.alt} loading="lazy" width="800" height="1000" />
+              </div>
+              <figcaption class="modeling-gallery__caption">
+                <span class="modeling-gallery__category">{item.category}</span>
+                <span class="modeling-gallery__title">{item.caption}</span>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      ) : (
+        <p class="modeling-gallery__empty">
+          Portfolio images coming soon. To add your work, drop photos in
+          <code>public/images/modeling/</code> and update <code>src/config/modeling.ts</code>.
+        </p>
+      )}
+    </div>
+  </section>
+
+  <section class="section modeling-cta">
+    <div class="container modeling-cta__inner">
+      <h2 class="section__title">Interested in working together?</h2>
+      <p class="section__desc">
+        Available for editorial, commercial, beauty, and lifestyle bookings in NYC and on location.
+      </p>
+      <a
+        href={`mailto:${modelingProfile.bookingEmail}?subject=Modeling%20Booking%20Enquiry`}
+        class="btn btn--primary"
+      >
+        {modelingProfile.bookingEmail}
+      </a>
+    </div>
+  </section>
+</BaseLayout>
