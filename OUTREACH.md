@@ -25,12 +25,12 @@ This is intentionally **not** fully automated. You stay in control of who you co
 ### 2. Bind KV to your Pages project
 
 1. Go to **Workers & Pages** → your **jess-oneill-website** project
-2. **Settings** → **Bindings** (under Build)
+2. **Settings** → **Bindings**
 3. Click **Add** → choose **KV namespace**
 4. Set **Variable name** to exactly: `OUTREACH_KV`
 5. Select your `jess-outreach` namespace → **Save**
 
-> **Note:** If bindings were locked by `wrangler.toml`, that has been removed so you can manage this in the dashboard.
+> Bindings must be configured in the Cloudflare dashboard (do not add a `wrangler.toml` KV section — it locks the UI).
 
 ### 3. Add environment variables
 
