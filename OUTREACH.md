@@ -37,9 +37,9 @@ Pages project → **Settings** → **Environment variables**:
 | `OUTREACH_ADMIN_PASSWORD` | Yes | Password to sign in at `/outreach` |
 | `OUTREACH_SESSION_SECRET` | Recommended | Random string for session cookies |
 | `RESEND_API_KEY` | For dashboard send | API key from [resend.com](https://resend.com) |
-| `OUTREACH_FROM_EMAIL` | For dashboard send | Verified sender, e.g. `Jess O'Neill <partnerships@jess-oneill.com>` |
-| `OUTREACH_REPLY_TO` | Recommended | Where replies go, e.g. `jessoneill.business@gmail.com` |
-| `OUTREACH_BCC` | Optional | Inbox copy of sent emails (defaults to reply-to) |
+| `OUTREACH_FROM_EMAIL` | For dashboard send | `Jess O'Neill <partnerships@jess-oneill.com>` |
+| `OUTREACH_REPLY_TO` | Optional override | Defaults to `jessoneill.business@gmail.com` |
+| `OUTREACH_BCC` | Optional override | Defaults to `jessoneill.business@gmail.com` (always on) |
 
 ### 4. Set up Resend (one-click send from the dashboard)
 
@@ -58,13 +58,20 @@ Best options for you:
 
 Verify the domain in Resend by adding DNS records (Resend walks you through this). Since `jess-oneill.com` is already on Cloudflare, this is straightforward.
 
-#### Replies (where responses land)
+#### Replies and inbox copies
 
-Set `OUTREACH_REPLY_TO` to the inbox you actually check — e.g. `jessoneill.business@gmail.com` or your Outlook address. When a PR contact hits **Reply**, their response goes there automatically.
+Every email sent from the dashboard:
 
-#### Copies in your inbox
+- **Reply-To:** `jessoneill.business@gmail.com` — PR contacts' replies land in your Gmail inbox
+- **BCC:** `jessoneill.business@gmail.com` — you receive a copy of every sent email in your inbox
 
-By default, a **BCC copy** of each sent email goes to your reply-to address so you have a record in Gmail/Outlook. Override with `OUTREACH_BCC` if needed.
+Set `OUTREACH_REPLY_TO` and `OUTREACH_BCC` in Cloudflare only if you need to override these defaults.
+
+#### From address (what appears in the "From" field)
+
+Resend requires a verified domain for the From address (e.g. `partnerships@jess-oneill.com`). Gmail addresses cannot be used as the technical sender through Resend, but **all replies and BCC copies go to `jessoneill.business@gmail.com`**, so you manage everything from your Gmail inbox.
+
+If you use **Open in Gmail** from the dashboard instead, the email sends directly from your Gmail account.
 
 #### Environment variables for Resend
 

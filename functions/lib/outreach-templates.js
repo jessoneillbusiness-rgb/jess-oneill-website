@@ -1,4 +1,5 @@
 const MEDIA_KIT_URL = 'https://www.jess-oneill.com/media-kit';
+const BUSINESS_EMAIL = 'jessoneill.business@gmail.com';
 
 export function buildDraftEmail(contact) {
   const firstName = contact.name?.trim().split(/\s+/)[0] || 'there';
@@ -24,7 +25,7 @@ I'd love to explore how we could work together on a campaign, launch, or brand s
 
 Best,
 Jess O'Neill
-jess@ykwtalent.com
+${BUSINESS_EMAIL}
 www.jess-oneill.com`;
 
   return { subject, body };

@@ -1,4 +1,5 @@
 import { authError, isAuthenticated, json } from '../../lib/outreach-auth.js';
+import { OUTREACH_BUSINESS_EMAIL } from '../../lib/outreach-email.js';
 import { buildHtmlEmail } from '../../lib/outreach-templates.js';
 import { listDrafts, saveDrafts } from '../../lib/outreach-store.js';
 
@@ -25,9 +26,10 @@ export async function onRequestPost(context) {
     );
   }
 
-  const fromEmail = context.env.OUTREACH_FROM_EMAIL || 'Jess O\'Neill <partnerships@jess-oneill.com>';
-  const replyTo = context.env.OUTREACH_REPLY_TO || 'jessoneill.business@gmail.com';
-  const bcc = context.env.OUTREACH_BCC || replyTo;
+  const fromEmail =
+    context.env.OUTREACH_FROM_EMAIL || `Jess O'Neill <partnerships@jess-oneill.com>`;
+  const replyTo = context.env.OUTREACH_REPLY_TO || OUTREACH_BUSINESS_EMAIL;
+  const bcc = context.env.OUTREACH_BCC || OUTREACH_BUSINESS_EMAIL;
 
   try {
     const drafts = await listDrafts(context.env);
@@ -46,12 +48,11 @@ export async function onRequestPost(context) {
       from: fromEmail,
       to: [draft.contactEmail],
       reply_to: replyTo,
+      bcc: [bcc],
       subject,
       text: textBody,
       html: buildHtmlEmail(subject, textBody, draft),
     };
-
-    if (bcc) payload.bcc = [bcc];
 
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
