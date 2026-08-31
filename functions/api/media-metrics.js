@@ -3,8 +3,13 @@
  */
 
 import { getMediaMetrics } from '../lib/media-metrics.js';
+import { accessDeniedResponse, hasMediaKitAccess } from '../lib/media-kit-access.js';
 
 export async function onRequestGet(context) {
+  if (!(await hasMediaKitAccess(context.request, context.env))) {
+    return accessDeniedResponse();
+  }
+
   const cache = caches.default;
   const cacheKey = new Request(context.request.url, { method: 'GET' });
   const cached = await cache.match(cacheKey);

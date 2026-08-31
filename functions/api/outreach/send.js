@@ -64,7 +64,7 @@ export async function onRequestPost(context) {
       subject,
       text: textBody,
       html: buildHtmlEmail(sourceBody),
-      attachments: [buildMediaKitAttachment()],
+      attachments: [buildMediaKitAttachment(context.env)],
     };
 
     const response = await fetch('https://api.resend.com/emails', {

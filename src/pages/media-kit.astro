@@ -9,94 +9,141 @@ import { socialChannels } from '../config/site';
   title="Media Kit"
   description="Work with Jess O'Neill — audience metrics, platform stats, and collaboration info for brands and PR."
 >
-  <section class="media-kit-hero">
-    <div class="container media-kit-hero__inner">
-      <p class="section__eyebrow">For Brands & PR</p>
-      <h1 class="media-kit-hero__title">{mediaKit.headline}</h1>
-      <p class="media-kit-hero__desc">{mediaKit.subheadline}</p>
-      <div class="media-kit-hero__actions">
-        <a href={`mailto:${mediaKit.contactEmail}?subject=Partnership%20Inquiry`} class="btn btn--primary">
-          Get in Touch
-        </a>
-        <MediaKitDownload />
-      </div>
-    </div>
-  </section>
-
-  <section class="section media-kit-stats">
+  <section class="media-kit-gate" id="media-kit-gate">
     <div class="container">
-      <div class="section__header" style="border-bottom: none; padding-bottom: 0;">
-        <p class="section__eyebrow">Live Stats</p>
-        <h2 class="section__title">Audience at a Glance</h2>
-        <p class="section__desc" id="media-kit-updated"></p>
-      </div>
+      <div class="media-kit-gate__card">
+        <p class="section__eyebrow">Media Kit</p>
+        <h1 class="media-kit-gate__title">View Jess O'Neill's Media Kit</h1>
+        <p class="media-kit-gate__desc">
+          Enter your email for instant access to audience stats, platform metrics, and collaboration info.
+          Perfect for brands, PR teams, and partners.
+        </p>
 
-      <div class="media-kit-total">
-        <p class="media-kit-total__label">Total Cross-Platform Audience</p>
-        <p class="media-kit-total__value" id="total-audience">…</p>
-      </div>
+        <form class="media-kit-gate__form" id="media-kit-gate-form">
+          <label class="media-kit-gate__field">
+            <span>Email address *</span>
+            <input type="email" name="email" autocomplete="email" required placeholder="you@company.com" />
+          </label>
 
-      <div class="media-kit-platforms" id="media-kit-platforms">
-        <p class="media-kit-loading">Loading latest metrics…</p>
-      </div>
-    </div>
-  </section>
+          <label class="media-kit-gate__field">
+            <span>Name</span>
+            <input type="text" name="name" autocomplete="name" placeholder="Your name" />
+          </label>
 
-  <section class="section" style="background: var(--color-surface); border-top: 1px solid var(--color-border);">
-    <div class="container media-kit-split">
-      <div>
-        <p class="section__eyebrow">Audience</p>
-        <h2 class="section__title" style="text-align: left; font-size: 2rem;">Who Follows Along</h2>
-        <p class="media-kit-text">{mediaKit.audience.summary}</p>
-        <ul class="media-kit-list">
-          {mediaKit.audience.highlights.map((item) => (
-            <li>{item}</li>
-          ))}
-        </ul>
-        <p class="media-kit-meta">
-          <strong>Location:</strong> {mediaKit.location}<br />
-          <strong>Niches:</strong> {mediaKit.niches.join(' · ')}
+          <label class="media-kit-gate__field">
+            <span>Company</span>
+            <input type="text" name="company" autocomplete="organization" placeholder="Brand or agency" />
+          </label>
+
+          <label class="media-kit-gate__checkbox">
+            <input type="checkbox" name="newsletter" />
+            <span>Keep me updated with occasional news, content, and updates from Jess.</span>
+          </label>
+
+          <p class="media-kit-gate__error" id="media-kit-gate-error" hidden></p>
+
+          <button type="submit" class="btn btn--primary" id="media-kit-gate-submit">
+            View Media Kit
+          </button>
+        </form>
+
+        <p class="media-kit-gate__note">
+          Your email is used to share the media kit and, if you opt in, occasional updates. Unsubscribe any time.
         </p>
       </div>
-      <div>
-        <p class="section__eyebrow">Collaborations</p>
-        <h2 class="section__title" style="text-align: left; font-size: 2rem;">What I Offer</h2>
-        <div class="media-kit-offerings">
-          {mediaKit.offerings.map((group) => (
-            <div class="media-kit-offering">
-              <h3>{group.title}</h3>
-              <ul>
-                {group.items.map((item) => (
-                  <li>{item}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   </section>
 
-  <section class="section media-kit-cta">
-    <div class="container media-kit-cta__inner">
-      <h2 class="section__title">Let's Create Something Together</h2>
-      <p class="section__desc">
-        For partnerships, press, and campaign enquiries, reach out directly.
-      </p>
-      <div class="media-kit-cta__actions">
-        <a href={`mailto:${mediaKit.contactEmail}?subject=Partnership%20Inquiry`} class="btn btn--primary">
-          {mediaKit.contactEmail}
-        </a>
-        <MediaKitDownload variant="dark" />
+  <div id="media-kit-content" hidden>
+    <section class="media-kit-hero">
+      <div class="container media-kit-hero__inner">
+        <p class="section__eyebrow">For Brands & PR</p>
+        <h1 class="media-kit-hero__title">{mediaKit.headline}</h1>
+        <p class="media-kit-hero__desc">{mediaKit.subheadline}</p>
+        <div class="media-kit-hero__actions">
+          <a href={`mailto:${mediaKit.contactEmail}?subject=Partnership%20Inquiry`} class="btn btn--primary">
+            Get in Touch
+          </a>
+          <MediaKitDownload />
+        </div>
       </div>
-      <div class="media-kit-socials">
-        {socialChannels.map((channel) => (
-          <a href={channel.url} target="_blank" rel="noopener noreferrer">{channel.name}</a>
-        ))}
+    </section>
+
+    <section class="section media-kit-stats">
+      <div class="container">
+        <div class="section__header" style="border-bottom: none; padding-bottom: 0;">
+          <p class="section__eyebrow">Live Stats</p>
+          <h2 class="section__title">Audience at a Glance</h2>
+          <p class="section__desc" id="media-kit-updated"></p>
+        </div>
+
+        <div class="media-kit-total">
+          <p class="media-kit-total__label">Total Cross-Platform Audience</p>
+          <p class="media-kit-total__value" id="total-audience">…</p>
+        </div>
+
+        <div class="media-kit-platforms" id="media-kit-platforms">
+          <p class="media-kit-loading">Loading latest metrics…</p>
+        </div>
       </div>
-      <p class="media-kit-note">{mediaKit.pressNote}</p>
-    </div>
-  </section>
+    </section>
+
+    <section class="section" style="background: var(--color-surface); border-top: 1px solid var(--color-border);">
+      <div class="container media-kit-split">
+        <div>
+          <p class="section__eyebrow">Audience</p>
+          <h2 class="section__title" style="text-align: left; font-size: 2rem;">Who Follows Along</h2>
+          <p class="media-kit-text">{mediaKit.audience.summary}</p>
+          <ul class="media-kit-list">
+            {mediaKit.audience.highlights.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+          <p class="media-kit-meta">
+            <strong>Location:</strong> {mediaKit.location}<br />
+            <strong>Niches:</strong> {mediaKit.niches.join(' · ')}
+          </p>
+        </div>
+        <div>
+          <p class="section__eyebrow">Collaborations</p>
+          <h2 class="section__title" style="text-align: left; font-size: 2rem;">What I Offer</h2>
+          <div class="media-kit-offerings">
+            {mediaKit.offerings.map((group) => (
+              <div class="media-kit-offering">
+                <h3>{group.title}</h3>
+                <ul>
+                  {group.items.map((item) => (
+                    <li>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section media-kit-cta">
+      <div class="container media-kit-cta__inner">
+        <h2 class="section__title">Let's Create Something Together</h2>
+        <p class="section__desc">
+          For partnerships, press, and campaign enquiries, reach out directly.
+        </p>
+        <div class="media-kit-cta__actions">
+          <a href={`mailto:${mediaKit.contactEmail}?subject=Partnership%20Inquiry`} class="btn btn--primary">
+            {mediaKit.contactEmail}
+          </a>
+          <MediaKitDownload variant="dark" />
+        </div>
+        <div class="media-kit-socials">
+          {socialChannels.map((channel) => (
+            <a href={channel.url} target="_blank" rel="noopener noreferrer">{channel.name}</a>
+          ))}
+        </div>
+        <p class="media-kit-note">{mediaKit.pressNote}</p>
+      </div>
+    </section>
+  </div>
 </BaseLayout>
 
 <script>
@@ -156,7 +203,8 @@ import { socialChannels } from '../config/site';
     const updatedEl = document.getElementById('media-kit-updated');
 
     try {
-      const response = await fetch('/api/media-metrics');
+      const response = await fetch('/api/media-metrics', { credentials: 'same-origin' });
+      if (response.status === 401) return;
       if (!response.ok) throw new Error('Failed to load');
       const data = await response.json();
 
@@ -212,7 +260,10 @@ import { socialChannels } from '../config/site';
     }
   }
 
-  loadMediaMetrics();
+  document.addEventListener('media-kit:unlocked', () => {
+    void loadMediaMetrics();
+  });
 </script>
 
+<script src="../scripts/media-kit-gate.ts"></script>
 <script src="../scripts/media-kit-pdf.ts"></script>
