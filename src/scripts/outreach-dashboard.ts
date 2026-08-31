@@ -43,6 +43,21 @@ const TEST_CONTACT = {
   notes: 'Test draft — review and send to verify outreach is working.',
 };
 
+function usesLegacyEmailTemplate(body: string) {
+  return body.includes('I share polished, relatable content with an engaged audience');
+}
+
+async function regenerateDrafts(contactIds: string[]) {
+  return api<{ drafts: Draft[] }>('/api/outreach/drafts', {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'generate',
+      contactIds,
+      regenerate: true,
+    }),
+  });
+}
+
 let contacts: Contact[] = [];
 let drafts: Draft[] = [];
 let resendEnabled = false;
@@ -142,23 +157,25 @@ async function ensureTestDraft() {
 
   if (!contact) return;
 
+  const pendingDraft = drafts.find(
+    (item) => item.contactEmail.toLowerCase() === testEmail && item.status === 'pending',
+  );
+
+  if (pendingDraft && !usesLegacyEmailTemplate(pendingDraft.body)) return;
+
   try {
-    await api('/api/outreach/drafts', {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'generate',
-        contactIds: [contact.id],
-        regenerate: true,
-      }),
-    });
+    await regenerateDrafts([contact.id]);
     const draftsRes = await api<{ drafts: Draft[] }>('/api/outreach/drafts');
     drafts = draftsRes.drafts;
     renderDrafts();
     renderSent();
     activateTab('drafts');
     showAlert('Test draft for Matthew is ready in Pending drafts.');
-  } catch {
-    // ignore seed failures during setup
+  } catch (error) {
+    showAlert(
+      error instanceof Error ? error.message : 'Could not refresh Matthew test draft',
+      'error',
+    );
   }
 }
 
@@ -299,6 +316,7 @@ function renderDraftCard(draft: Draft, mode: 'pending' | 'sent') {
         <button type="button" class="btn btn--primary draft-outlook">Open in Outlook</button>
         <button type="button" class="btn btn--outline-dark draft-mailto">Open in mail app</button>
         <button type="button" class="btn btn--outline-dark draft-save">Save edits</button>
+        <button type="button" class="btn btn--outline-dark draft-regenerate">Regenerate from template</button>
         <button type="button" class="outreach-link-btn draft-mark-sent">Mark as sent</button>
         <button type="button" class="btn btn--primary draft-resend">Send from dashboard</button>
         <button type="button" class="outreach-link-btn draft-delete">Delete draft</button>
@@ -332,6 +350,27 @@ function renderDrafts() {
       });
       await loadData();
       showAlert('Draft saved.');
+    });
+
+    card.querySelector('.draft-regenerate')?.addEventListener('click', async () => {
+      const draft = drafts.find((item) => item.id === id);
+      if (!draft) return;
+      if (
+        !confirm(
+          'Replace this draft with a fresh template? Your edits will be lost, but the latest audience stats will be included.',
+        )
+      ) {
+        return;
+      }
+
+      try {
+        await regenerateDrafts([draft.contactId]);
+        await loadData();
+        showAlert('Draft regenerated with the latest template and stats.');
+        activateTab('drafts');
+      } catch (error) {
+        showAlert(error instanceof Error ? error.message : 'Could not regenerate draft', 'error');
+      }
     });
 
     card.querySelector('.draft-delete')?.addEventListener('click', async () => {

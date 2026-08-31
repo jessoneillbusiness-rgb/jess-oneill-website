@@ -21,7 +21,19 @@ function envNumber(env, key) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-async function fetchInstagram() {
+function withTimeout(promise, timeoutMs, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timed out`)), timeoutMs);
+    }),
+  ]);
+}
+
+async function fetchInstagram(env) {
+  const manualFollowers = envNumber(env, 'INSTAGRAM_FOLLOWER_COUNT');
+  const manualPosts = envNumber(env, 'INSTAGRAM_POST_COUNT');
+
   const urls = [
     `https://i.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(INSTAGRAM_USERNAME)}`,
     `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(INSTAGRAM_USERNAME)}`,
@@ -36,16 +48,20 @@ async function fetchInstagram() {
 
   for (const url of urls) {
     try {
-      const response = await fetch(url, { headers });
+      const response = await withTimeout(
+        fetch(url, { headers }),
+        3500,
+        'Instagram metrics',
+      );
       if (!response.ok) continue;
       const data = await response.json();
       const user = data?.data?.user;
       if (!user) continue;
 
       return {
-        followers: user.edge_followed_by?.count ?? null,
+        followers: user.edge_followed_by?.count ?? manualFollowers,
         following: user.edge_follow?.count ?? null,
-        posts: user.edge_owner_to_timeline_media?.count ?? null,
+        posts: user.edge_owner_to_timeline_media?.count ?? manualPosts,
         username: user.username ?? INSTAGRAM_USERNAME,
       };
     } catch {
@@ -53,15 +69,31 @@ async function fetchInstagram() {
     }
   }
 
+  if (manualFollowers !== null) {
+    return {
+      followers: manualFollowers,
+      posts: manualPosts,
+      username: INSTAGRAM_USERNAME,
+    };
+  }
+
   return null;
 }
 
-async function fetchTikTok() {
+async function fetchTikTok(env) {
+  const manualFollowers = envNumber(env, 'TIKTOK_FOLLOWER_COUNT');
+  const manualLikes = envNumber(env, 'TIKTOK_TOTAL_LIKES');
+  const manualVideos = envNumber(env, 'TIKTOK_VIDEO_COUNT');
+
   try {
-    const response = await fetch(`https://www.tiktok.com/@${encodeURIComponent(TIKTOK_USERNAME)}`, {
-      headers: { ...BROWSER_HEADERS, Accept: 'text/html,application/xhtml+xml' },
-    });
-    if (!response.ok) return null;
+    const response = await withTimeout(
+      fetch(`https://www.tiktok.com/@${encodeURIComponent(TIKTOK_USERNAME)}`, {
+        headers: { ...BROWSER_HEADERS, Accept: 'text/html,application/xhtml+xml' },
+      }),
+      3500,
+      'TikTok metrics',
+    );
+    if (!response.ok) throw new Error('TikTok fetch failed');
 
     const html = await response.text();
     const pick = (key) => {
@@ -72,13 +104,21 @@ async function fetchTikTok() {
     };
 
     return {
-      followers: pick('followerCount'),
+      followers: pick('followerCount') ?? manualFollowers,
       following: pick('followingCount'),
-      totalLikes: pick('heartCount') ?? pick('heart'),
-      videos: pick('videoCount'),
+      totalLikes: pick('heartCount') ?? pick('heart') ?? manualLikes,
+      videos: pick('videoCount') ?? manualVideos,
       username: TIKTOK_USERNAME,
     };
   } catch {
+    if (manualFollowers !== null) {
+      return {
+        followers: manualFollowers,
+        totalLikes: manualLikes,
+        videos: manualVideos,
+        username: TIKTOK_USERNAME,
+      };
+    }
     return null;
   }
 }
@@ -127,34 +167,40 @@ function buildInsights(env) {
   };
 }
 
-export async function getMediaMetrics(env = {}) {
-  const [instagram, tiktok, facebook] = await Promise.all([
-    fetchInstagram(),
-    fetchTikTok(),
-    fetchFacebook(env),
-  ]);
+export async function getMediaMetrics(env = {}, options = {}) {
+  const timeoutMs = options.timeoutMs ?? 8000;
 
-  const insights = buildInsights(env);
+  const metricsPromise = (async () => {
+    const [instagram, tiktok, facebook] = await Promise.all([
+      fetchInstagram(env),
+      fetchTikTok(env),
+      fetchFacebook(env),
+    ]);
 
-  const totalAudience =
-    (instagram?.followers ?? 0) + (tiktok?.followers ?? 0) + (facebook?.followers ?? 0);
+    const insights = buildInsights(env);
 
-  return {
-    updatedAt: new Date().toISOString(),
-    platforms: {
-      instagram: instagram
-        ? { ...instagram, insights: insights.instagram }
-        : { insights: insights.instagram },
-      tiktok: tiktok ? { ...tiktok, insights: insights.tiktok } : { insights: insights.tiktok },
-      facebook: facebook
-        ? { ...facebook, insights: insights.facebook }
-        : { insights: insights.facebook },
-    },
-    totals: {
-      audience: totalAudience || null,
-      tiktokLikes: tiktok?.totalLikes ?? null,
-      instagramPosts: instagram?.posts ?? null,
-      tiktokVideos: tiktok?.videos ?? null,
-    },
-  };
+    const totalAudience =
+      (instagram?.followers ?? 0) + (tiktok?.followers ?? 0) + (facebook?.followers ?? 0);
+
+    return {
+      updatedAt: new Date().toISOString(),
+      platforms: {
+        instagram: instagram
+          ? { ...instagram, insights: insights.instagram }
+          : { insights: insights.instagram },
+        tiktok: tiktok ? { ...tiktok, insights: insights.tiktok } : { insights: insights.tiktok },
+        facebook: facebook
+          ? { ...facebook, insights: insights.facebook }
+          : { insights: insights.facebook },
+      },
+      totals: {
+        audience: totalAudience || null,
+        tiktokLikes: tiktok?.totalLikes ?? null,
+        instagramPosts: instagram?.posts ?? null,
+        tiktokVideos: tiktok?.videos ?? null,
+      },
+    };
+  })();
+
+  return withTimeout(metricsPromise, timeoutMs, 'Media metrics');
 }

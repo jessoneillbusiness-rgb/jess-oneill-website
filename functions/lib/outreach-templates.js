@@ -100,7 +100,7 @@ export async function buildDraftEmail(contact, env = {}) {
 
   let introParagraph;
   try {
-    const metrics = await getMediaMetrics(env);
+    const metrics = await getMediaMetrics(env, { timeoutMs: 6000 });
     introParagraph = buildMetricsIntroParagraph(metrics);
   } catch {
     introParagraph = buildMetricsIntroParagraph(null);
