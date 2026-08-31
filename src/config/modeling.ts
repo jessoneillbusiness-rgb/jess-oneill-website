@@ -40,27 +40,27 @@ export const modelingProfile = {
    */
   portfolio: [
     {
-      src: '/images/modeling/placeholder-01.svg',
-      alt: 'Placeholder — replace with your modeling photo',
-      caption: 'Add your first portfolio image',
+      src: '/images/modeling/editorial-01.jpg',
+      alt: "Jess O'Neill in a floral corset dress, editorial bedroom setting",
+      caption: 'Editorial lifestyle',
       category: 'Editorial',
     },
     {
-      src: '/images/modeling/placeholder-02.svg',
-      alt: 'Placeholder — replace with your modeling photo',
-      caption: 'Add your second portfolio image',
+      src: '/images/modeling/lifestyle-01.jpg',
+      alt: "Jess O'Neill in a pink dress on a terrace overlooking the mountains",
+      caption: 'Travel & lifestyle',
+      category: 'Lifestyle',
+    },
+    {
+      src: '/images/modeling/commercial-01.jpg',
+      alt: "Jess O'Neill in a polka dot dress on a terrace overlooking a lake",
+      caption: 'Resort & destination',
       category: 'Commercial',
     },
     {
-      src: '/images/modeling/placeholder-03.svg',
-      alt: 'Placeholder — replace with your modeling photo',
-      caption: 'Add your third portfolio image',
-      category: 'Beauty',
-    },
-    {
-      src: '/images/modeling/placeholder-04.svg',
-      alt: 'Placeholder — replace with your modeling photo',
-      caption: 'Add your fourth portfolio image',
+      src: '/images/modeling/portrait-01.jpg',
+      alt: "Jess O'Neill smiling at an outdoor restaurant",
+      caption: 'Outdoor portrait',
       category: 'Lifestyle',
     },
   ],

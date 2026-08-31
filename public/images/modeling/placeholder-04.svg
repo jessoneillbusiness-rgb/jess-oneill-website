@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" fill="none">
-  <rect width="800" height="600" fill="#e8f9f8"/>
-  <rect x="40" y="40" width="720" height="520" stroke="#0abab5" stroke-width="1" fill="#ffffff"/>
-  <text x="400" y="285" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#111111">Portfolio Image</text>
-  <text x="400" y="330" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#0abab5">Replace in src/config/modeling.ts</text>
-</svg>
