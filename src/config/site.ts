@@ -29,4 +29,9 @@ export const socialLinks = [
     url: 'https://www.tiktok.com/imjesschillin',
     icon: 'tiktok',
   },
+  {
+    name: 'Facebook',
+    url: 'https://www.facebook.com/people/Jess-Oneill/',
+    icon: 'facebook',
+  },
 ] as const;
