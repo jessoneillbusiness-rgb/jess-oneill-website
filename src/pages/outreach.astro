@@ -1,0 +1,146 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Outreach"
+  description="Private media kit outreach dashboard"
+  noindex={true}
+>
+  <section class="outreach-app" id="outreach-app">
+    <div class="container outreach-app__container">
+      <div id="outreach-login" class="outreach-panel outreach-panel--login">
+        <p class="section__eyebrow">Private</p>
+        <h1 class="outreach-panel__title">Media Kit Outreach</h1>
+        <p class="outreach-panel__desc">
+          Add PR contacts, review draft emails, edit each one, and send only after you approve.
+        </p>
+        <form id="outreach-login-form" class="outreach-form">
+          <label class="outreach-field">
+            <span>Password</span>
+            <input type="password" id="outreach-password" autocomplete="current-password" required />
+          </label>
+          <button type="submit" class="btn btn--primary">Sign in</button>
+          <p id="outreach-login-error" class="outreach-error" hidden></p>
+        </form>
+      </div>
+
+      <div id="outreach-dashboard" class="outreach-dashboard" hidden>
+        <header class="outreach-header">
+          <div>
+            <p class="section__eyebrow">Outreach</p>
+            <h1 class="outreach-header__title">Approve before sending</h1>
+            <p class="outreach-header__desc">
+              Add contacts from your research, generate drafts, tailor each email, then send when ready.
+            </p>
+          </div>
+          <button type="button" class="btn btn--outline-dark" id="outreach-logout">Sign out</button>
+        </header>
+
+        <div class="outreach-tabs" role="tablist" aria-label="Outreach sections">
+          <button type="button" class="outreach-tab outreach-tab--active" data-tab="contacts">Contacts</button>
+          <button type="button" class="outreach-tab" data-tab="drafts">Pending drafts</button>
+          <button type="button" class="outreach-tab" data-tab="sent">Sent</button>
+        </div>
+
+        <div id="outreach-alert" class="outreach-alert" hidden></div>
+
+        <section id="tab-contacts" class="outreach-tab-panel">
+          <div class="outreach-split">
+            <article class="outreach-panel">
+              <h2 class="outreach-panel__heading">Add contact</h2>
+              <form id="contact-form" class="outreach-form outreach-form--grid">
+                <label class="outreach-field">
+                  <span>Name</span>
+                  <input name="name" required placeholder="Alex Morgan" />
+                </label>
+                <label class="outreach-field">
+                  <span>Email</span>
+                  <input name="email" type="email" required placeholder="alex@brand.com" />
+                </label>
+                <label class="outreach-field">
+                  <span>Company / brand</span>
+                  <input name="company" required placeholder="Brand name" />
+                </label>
+                <label class="outreach-field">
+                  <span>Role</span>
+                  <input name="role" placeholder="PR Manager" />
+                </label>
+                <label class="outreach-field">
+                  <span>Category</span>
+                  <select name="category">
+                    <option value="">Select category</option>
+                    <option value="Beauty">Beauty</option>
+                    <option value="Fashion">Fashion</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Food & Dining">Food & Dining</option>
+                    <option value="Lifestyle">Lifestyle</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+                <label class="outreach-field outreach-field--full">
+                  <span>Notes</span>
+                  <textarea name="notes" rows="3" placeholder="Where you found them, campaign ideas, etc."></textarea>
+                </label>
+                <div class="outreach-field outreach-field--full">
+                  <button type="submit" class="btn btn--primary">Save contact</button>
+                </div>
+              </form>
+            </article>
+
+            <article class="outreach-panel">
+              <h2 class="outreach-panel__heading">Import CSV</h2>
+              <p class="outreach-panel__hint">
+                One contact per row: <code>name,email,company,role,category,notes</code>
+              </p>
+              <label class="outreach-field">
+                <span>CSV file</span>
+                <input type="file" id="csv-import" accept=".csv,text/csv" />
+              </label>
+            </article>
+          </div>
+
+          <article class="outreach-panel outreach-panel--table">
+            <div class="outreach-panel__toolbar">
+              <h2 class="outreach-panel__heading">Your contacts</h2>
+              <button type="button" class="btn btn--primary" id="generate-drafts" disabled>
+                Generate drafts for selected
+              </button>
+            </div>
+            <div class="outreach-table-wrap">
+              <table class="outreach-table">
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" id="select-all-contacts" aria-label="Select all contacts" /></th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Company</th>
+                    <th>Category</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="contacts-table-body">
+                  <tr><td colspan="6" class="outreach-empty">No contacts yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section id="tab-drafts" class="outreach-tab-panel" hidden>
+          <div id="drafts-list" class="outreach-draft-list">
+            <p class="outreach-empty">No pending drafts. Select contacts and generate drafts first.</p>
+          </div>
+        </section>
+
+        <section id="tab-sent" class="outreach-tab-panel" hidden>
+          <div id="sent-list" class="outreach-draft-list">
+            <p class="outreach-empty">No sent emails yet.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script src="../scripts/outreach-dashboard.ts"></script>

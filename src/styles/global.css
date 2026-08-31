@@ -1335,6 +1335,274 @@ p {
   margin-inline: auto;
 }
 
+/* Outreach dashboard */
+.outreach-app {
+  padding: 3rem 0 4.5rem;
+}
+
+.outreach-app__container {
+  max-width: 980px;
+}
+
+.outreach-panel {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 1.5rem;
+}
+
+.outreach-panel--login {
+  max-width: 480px;
+  margin-inline: auto;
+}
+
+.outreach-panel__title {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  margin-bottom: 0.75rem;
+}
+
+.outreach-panel__desc,
+.outreach-panel__hint {
+  color: var(--color-text-muted);
+  line-height: 1.65;
+  margin-bottom: 1.25rem;
+}
+
+.outreach-panel__heading {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.outreach-panel__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.outreach-panel--table {
+  margin-top: 1.5rem;
+}
+
+.outreach-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 1.5rem;
+}
+
+.outreach-header__title {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  margin-bottom: 0.5rem;
+}
+
+.outreach-header__desc {
+  color: var(--color-text-muted);
+  max-width: 620px;
+}
+
+.outreach-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.outreach-tab {
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.outreach-tab--active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.outreach-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.outreach-form--grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.outreach-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.outreach-field--full {
+  grid-column: 1 / -1;
+}
+
+.outreach-field span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.outreach-field input,
+.outreach-field select,
+.outreach-field textarea {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  background: var(--color-bg);
+}
+
+.outreach-split {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 1rem;
+}
+
+.outreach-table-wrap {
+  overflow-x: auto;
+}
+
+.outreach-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.925rem;
+}
+
+.outreach-table th,
+.outreach-table td {
+  padding: 0.85rem 0.65rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.outreach-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.outreach-empty {
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 1rem;
+}
+
+.outreach-link-btn {
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.outreach-alert {
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1rem;
+}
+
+.outreach-alert--success {
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+}
+
+.outreach-alert--error {
+  background: #fdecec;
+  color: #8a1f1f;
+}
+
+.outreach-error {
+  color: #8a1f1f;
+  font-size: 0.875rem;
+}
+
+.outreach-draft-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.outreach-draft {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  padding: 1.25rem;
+}
+
+.outreach-draft--sent {
+  border-top-color: var(--color-text);
+}
+
+.outreach-draft__header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.outreach-draft__header h3 {
+  font-size: 1.125rem;
+}
+
+.outreach-draft__header p,
+.outreach-draft__subject {
+  color: var(--color-text-muted);
+  font-size: 0.925rem;
+}
+
+.outreach-draft__preview {
+  white-space: pre-wrap;
+  background: var(--color-surface);
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.outreach-draft__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.outreach-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.outreach-badge--sent {
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
 @media (max-width: 768px) {
   .nav-toggle {
     display: block;
@@ -1406,5 +1674,14 @@ p {
   .modeling-gallery {
     grid-template-columns: 1fr;
     gap: 2.5rem;
+  }
+
+  .outreach-split,
+  .outreach-form--grid {
+    grid-template-columns: 1fr;
+  }
+
+  .outreach-header {
+    flex-direction: column;
   }
 }
