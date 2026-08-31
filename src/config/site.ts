@@ -37,8 +37,8 @@ export const socialChannels = [
   {
     id: 'facebook',
     name: 'Facebook',
-    url: 'https://www.facebook.com/people/Jess-Oneill/',
-    username: 'Jess-Oneill',
+    url: 'https://www.facebook.com/people/Jess-Oneill/61575124581812/',
+    pageId: '61575124581812',
     icon: 'facebook',
   },
 ] as const;

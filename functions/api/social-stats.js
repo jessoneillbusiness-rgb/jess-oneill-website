@@ -3,10 +3,12 @@
  * Refreshes from Instagram, TikTok, and Facebook (when configured) — cached 1 hour.
  */
 
+const FACEBOOK_PAGE_ID = '61575124581812';
+
 const CHANNELS = [
   { id: 'instagram', name: 'Instagram', username: 'jess.oneill' },
   { id: 'tiktok', name: 'TikTok', username: 'imjesschillin' },
-  { id: 'facebook', name: 'Facebook', username: 'Jess-Oneill' },
+  { id: 'facebook', name: 'Facebook' },
 ];
 
 const CACHE_SECONDS = 3600;
@@ -49,7 +51,7 @@ async function fetchTikTok(username) {
 
 async function fetchFacebook(env) {
   const token = env.FACEBOOK_ACCESS_TOKEN;
-  const pageId = env.FACEBOOK_PAGE_ID;
+  const pageId = env.FACEBOOK_PAGE_ID || FACEBOOK_PAGE_ID;
 
   if (token && pageId) {
     const response = await fetch(
