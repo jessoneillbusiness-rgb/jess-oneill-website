@@ -36,8 +36,7 @@ const icons: Record<string, string> = {
     {socialLinks.map((link) => (
       <a
         href={link.url}
-        class="social-link"
-        style="border-color: var(--color-border); color: var(--color-text-muted); padding: 0.5rem 1rem; font-size: 0.8rem;"
+        class="social-link social-link--inline"
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`Follow on ${link.name}`}
