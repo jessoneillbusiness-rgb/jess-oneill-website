@@ -9,16 +9,18 @@ const { category } = Astro.props;
 ---
 
 <a href={`/category/${category.slug}`} class="category-card">
-  <img
-    class="category-card__image"
-    src={`/images/categories/${category.slug}.jpg`}
-    alt={`${category.label} — ${category.description}`}
-    loading="lazy"
-    width="560"
-    height="420"
-  />
-  <div class="category-card__overlay">
-    <h3 class="category-card__title">{category.label}</h3>
-    <p class="category-card__desc">{category.description}</p>
+  <div class="category-card__media">
+    <img
+      class="category-card__image"
+      src={`/images/categories/${category.slug}.jpg`}
+      alt={`${category.label} — ${category.description}`}
+      loading="lazy"
+      width="560"
+      height="420"
+    />
+  </div>
+  <div class="category-card__body">
+    <p class="category-card__eyebrow">{category.label}</p>
+    <h3 class="category-card__title">{category.description}</h3>
   </div>
 </a>
