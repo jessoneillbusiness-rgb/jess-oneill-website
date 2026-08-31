@@ -1,0 +1,24 @@
+---
+import { categories } from '../config/site';
+
+interface Props {
+  category: (typeof categories)[number];
+}
+
+const { category } = Astro.props;
+---
+
+<a href={`/category/${category.slug}`} class="category-card">
+  <img
+    class="category-card__image"
+    src={`/images/categories/${category.slug}.jpg`}
+    alt={`${category.label} — ${category.description}`}
+    loading="lazy"
+    width="560"
+    height="420"
+  />
+  <div class="category-card__overlay">
+    <h3 class="category-card__title">{category.label}</h3>
+    <p class="category-card__desc">{category.description}</p>
+  </div>
+</a>

@@ -3,8 +3,8 @@ title: 'The Ultimate NYC Brunch Guide'
 description: 'From hidden gem cafés in Brooklyn to iconic Manhattan institutions — where to brunch when you want the full New York experience.'
 category: food
 pubDate: 2026-03-08
-image: /images/categories/food.svg
-imageAlt: 'Brunch spread with avocado toast and coffee'
+image: /images/photos/brunch-style.jpg
+imageAlt: 'Jess in a pastel yellow and blue outfit at an outdoor restaurant'
 ---
 
 New York City runs on brunch. It's the sacred weekend ritual — the slow morning, the perfect eggs, the people-watching that could fill a novel.

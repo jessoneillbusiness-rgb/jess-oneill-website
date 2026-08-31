@@ -3,8 +3,8 @@ title: 'My Morning Skincare Ritual'
 description: 'The simple, effective routine that keeps my skin glowing through NYC winters, summer humidity, and everything in between.'
 category: beauty
 pubDate: 2026-02-28
-image: /images/categories/beauty.svg
-imageAlt: 'Skincare products arranged on a marble surface'
+image: /images/photos/beauty-moment.jpg
+imageAlt: 'Jess taking a mirror selfie in a boutique wearing a white crop top'
 ---
 
 Skincare doesn't have to be complicated. After trying everything (and I mean *everything*), I've landed on a routine that's minimal, consistent, and actually works.

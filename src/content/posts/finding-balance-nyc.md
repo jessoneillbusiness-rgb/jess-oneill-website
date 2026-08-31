@@ -3,8 +3,8 @@ title: 'Finding Balance in the City That Never Sleeps'
 description: 'How I learned to slow down, set boundaries, and actually enjoy living in New York without burning out.'
 category: lifestyle
 pubDate: 2026-02-20
-image: /images/categories/lifestyle.svg
-imageAlt: 'Woman reading in a cozy NYC apartment with city views'
+image: /images/photos/everyday-style.jpg
+imageAlt: 'Jess in a white summer dress standing in front of an ivy-covered wall'
 ---
 
 New York will take everything you give it. Your time, your energy, your sanity — if you let it. I spent my first year here running on adrenaline and coffee, convinced that slowing down meant falling behind.

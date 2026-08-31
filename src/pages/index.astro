@@ -1,4 +1,5 @@
 ---
+import CategoryCard from '../components/CategoryCard.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostCard from '../components/PostCard.astro';
 import SocialLinks from '../components/SocialLinks.astro';
@@ -16,7 +17,7 @@ const recentPosts = allPosts.slice(1, 4);
 <BaseLayout>
   <SocialStats />
 
-  <section class="hero">
+  <section class="hero hero--photo">
     <div class="container hero__content">
       <p class="hero__eyebrow">{site.tagline}</p>
       <h1 class="hero__title">{site.heroTitle}</h1>
@@ -49,13 +50,25 @@ const recentPosts = allPosts.slice(1, 4);
         <h2 class="section__title">Browse by Category</h2>
         <p class="section__desc">Travel adventures, food discoveries, beauty rituals, and everyday living.</p>
       </div>
-      <nav class="category-nav" aria-label="Categories">
+      <nav class="category-grid" aria-label="Categories">
         {categories.map((cat) => (
-          <a href={`/category/${cat.slug}`} class="category-pill">
-            {cat.label}
-          </a>
+          <CategoryCard category={cat} />
         ))}
       </nav>
+    </div>
+  </section>
+
+  <section class="section section--compact">
+    <div class="container">
+      <div class="section__header">
+        <p class="section__eyebrow">Moments</p>
+        <h2 class="section__title">Life & Style</h2>
+      </div>
+      <div class="photo-strip">
+        <img src="/images/photos/travel-terrace.jpg" alt="Jess in a lilac dress on a terrace overlooking the mountains" loading="lazy" />
+        <img src="/images/photos/lake-view.jpg" alt="Jess in a polka dot dress on a terrace overlooking a lake" loading="lazy" />
+        <img src="/images/photos/evening-style.jpg" alt="Jess in a floral corset dress in an elegant bedroom" loading="lazy" />
+      </div>
     </div>
   </section>
 

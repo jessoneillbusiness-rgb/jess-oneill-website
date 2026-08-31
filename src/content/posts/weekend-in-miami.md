@@ -3,8 +3,8 @@ title: 'A Perfect Weekend in Miami'
 description: 'Sun-soaked days, art deco architecture, and the best Cuban coffee — my guide to 48 hours in the Magic City.'
 category: travel
 pubDate: 2026-03-15
-image: /images/categories/travel.svg
-imageAlt: 'Palm trees and art deco buildings in Miami'
+image: /images/photos/weekend-getaway.jpg
+imageAlt: 'Jess in a black dress leaning against a vintage red car at golden hour'
 ---
 
 Miami has a way of pulling you in from the moment you land. The humidity, the pastel buildings, the rhythm of the city — it all feels like stepping into a different world.
