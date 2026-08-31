@@ -32,6 +32,15 @@ const sentList = document.getElementById('sent-list')!;
 const generateBtn = document.getElementById('generate-drafts') as HTMLButtonElement;
 const selectAll = document.getElementById('select-all-contacts') as HTMLInputElement;
 
+const TEST_CONTACT = {
+  name: 'Matthew Roberts',
+  email: 'matthew.anthony.roberts@gmail.com',
+  company: 'Test Contact',
+  role: 'Test',
+  category: 'Lifestyle',
+  notes: 'Test draft — review and send to verify outreach is working.',
+};
+
 let contacts: Contact[] = [];
 let drafts: Draft[] = [];
 let resendEnabled = false;
@@ -89,6 +98,52 @@ async function loadData() {
   renderContacts();
   renderDrafts();
   renderSent();
+  await ensureTestDraft();
+}
+
+async function ensureTestDraft() {
+  const testEmail = TEST_CONTACT.email.toLowerCase();
+  let contact = contacts.find((item) => item.email.toLowerCase() === testEmail);
+
+  if (!contact) {
+    try {
+      const created = await api<{ contact: Contact }>('/api/outreach/contacts', {
+        method: 'POST',
+        body: JSON.stringify(TEST_CONTACT),
+      });
+      contact = created.contact;
+      contacts = [...contacts, contact];
+    } catch (error) {
+      if (!(error instanceof Error) || !error.message.includes('already exists')) {
+        return;
+      }
+      contact = contacts.find((item) => item.email.toLowerCase() === testEmail);
+    }
+  }
+
+  const pendingDraft = drafts.find(
+    (item) => item.contactEmail.toLowerCase() === testEmail && item.status === 'pending',
+  );
+
+  if (!pendingDraft && contact) {
+    try {
+      await api('/api/outreach/drafts', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'generate',
+          contactIds: [contact.id],
+        }),
+      });
+      const draftsRes = await api<{ drafts: Draft[] }>('/api/outreach/drafts');
+      drafts = draftsRes.drafts;
+      renderDrafts();
+      renderSent();
+      activateTab('drafts');
+      showAlert('Test draft for Matthew is ready in Pending drafts.');
+    } catch {
+      // ignore seed failures during setup
+    }
+  }
 }
 
 function renderContacts() {
