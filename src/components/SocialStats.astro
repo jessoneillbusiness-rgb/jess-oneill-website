@@ -1,0 +1,120 @@
+---
+import { socialChannels } from '../config/site';
+
+const channelLinks = Object.fromEntries(
+  socialChannels.map((channel) => [channel.id, channel.url]),
+);
+---
+
+<section class="social-stats" aria-label="Social follower counts">
+  <div class="container">
+    <p class="social-stats__eyebrow">Join the community</p>
+    <div class="social-stats__grid" id="social-stats-grid">
+      {socialChannels.map((channel) => (
+        <a
+          href={channel.url}
+          class="social-stats__card"
+          data-channel={channel.id}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="social-stats__name">{channel.name}</span>
+          <span class="social-stats__count" aria-live="polite">
+            <span class="social-stats__loading">…</span>
+          </span>
+          <span class="social-stats__label">followers</span>
+        </a>
+      ))}
+    </div>
+    <div class="social-stats__total" aria-live="polite">
+      <span class="social-stats__total-label">Total community</span>
+      <span class="social-stats__total-count" id="social-stats-total">
+        <span class="social-stats__loading">…</span>
+      </span>
+      <span class="social-stats__updated" id="social-stats-updated"></span>
+    </div>
+  </div>
+</section>
+
+<script define:vars={{ channelLinks }}>
+  const REFRESH_MS = 30 * 60 * 1000;
+
+  function formatCount(value) {
+    if (value === null || value === undefined) return '—';
+    return new Intl.NumberFormat('en-US', {
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(value);
+  }
+
+  function formatFull(value) {
+    if (value === null || value === undefined) return '—';
+    return new Intl.NumberFormat('en-US').format(value);
+  }
+
+  function animateCount(element, target) {
+    if (target === null || target === undefined) {
+      element.textContent = '—';
+      return;
+    }
+
+    const duration = 900;
+    const start = performance.now();
+    const from = 0;
+
+    function frame(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - (1 - progress) ** 3;
+      const current = Math.round(from + (target - from) * eased);
+      element.textContent = formatFull(current);
+
+      if (progress < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        element.textContent = formatFull(target);
+      }
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  async function loadStats() {
+    try {
+      const response = await fetch('/api/social-stats');
+      if (!response.ok) throw new Error('Failed to fetch stats');
+
+      const data = await response.json();
+
+      for (const channel of data.channels) {
+        const card = document.querySelector(`[data-channel="${channel.id}"]`);
+        const countEl = card?.querySelector('.social-stats__count');
+        if (countEl) {
+          animateCount(countEl, channel.count);
+        }
+      }
+
+      const totalEl = document.getElementById('social-stats-total');
+      if (totalEl) {
+        animateCount(totalEl, data.total > 0 ? data.total : null);
+      }
+
+      const updatedEl = document.getElementById('social-stats-updated');
+      if (updatedEl && data.updatedAt) {
+        const date = new Date(data.updatedAt);
+        updatedEl.textContent = `Updated ${date.toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        })}`;
+      }
+    } catch {
+      document.querySelectorAll('.social-stats__count, #social-stats-total').forEach((el) => {
+        el.textContent = '—';
+      });
+    }
+  }
+
+  loadStats();
+  setInterval(loadStats, REFRESH_MS);
+</script>

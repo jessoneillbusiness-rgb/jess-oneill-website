@@ -18,20 +18,30 @@ export const categories = [
 
 export type Category = (typeof categories)[number]['slug'];
 
-export const socialLinks = [
+/** Social profiles used for links and live follower counts */
+export const socialChannels = [
   {
+    id: 'instagram',
     name: 'Instagram',
     url: 'https://www.instagram.com/jess.oneill/',
+    username: 'jess.oneill',
     icon: 'instagram',
   },
   {
+    id: 'tiktok',
     name: 'TikTok',
     url: 'https://www.tiktok.com/imjesschillin',
+    username: 'imjesschillin',
     icon: 'tiktok',
   },
   {
+    id: 'facebook',
     name: 'Facebook',
     url: 'https://www.facebook.com/people/Jess-Oneill/',
+    username: 'Jess-Oneill',
     icon: 'facebook',
   },
 ] as const;
+
+/** @deprecated use socialChannels — kept for SocialLinks component */
+export const socialLinks = socialChannels.map(({ name, url, icon }) => ({ name, url, icon }));
