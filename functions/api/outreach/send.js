@@ -25,8 +25,9 @@ export async function onRequestPost(context) {
     );
   }
 
-  const fromEmail = context.env.OUTREACH_FROM_EMAIL || 'jess@ykwtalent.com';
-  const replyTo = context.env.OUTREACH_REPLY_TO || 'jess@ykwtalent.com';
+  const fromEmail = context.env.OUTREACH_FROM_EMAIL || 'Jess O\'Neill <partnerships@jess-oneill.com>';
+  const replyTo = context.env.OUTREACH_REPLY_TO || 'jessoneill.business@gmail.com';
+  const bcc = context.env.OUTREACH_BCC || replyTo;
 
   try {
     const drafts = await listDrafts(context.env);
@@ -41,20 +42,24 @@ export async function onRequestPost(context) {
     const subject = String(body.subject ?? draft.subject).trim();
     const textBody = String(body.body ?? draft.body).trim();
 
+    const payload = {
+      from: fromEmail,
+      to: [draft.contactEmail],
+      reply_to: replyTo,
+      subject,
+      text: textBody,
+      html: buildHtmlEmail(subject, textBody, draft),
+    };
+
+    if (bcc) payload.bcc = [bcc];
+
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${context.env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: [draft.contactEmail],
-        reply_to: replyTo,
-        subject,
-        text: textBody,
-        html: buildHtmlEmail(subject, textBody, draft),
-      }),
+      body: JSON.stringify(payload),
     });
 
     const result = await response.json().catch(() => ({}));
@@ -69,6 +74,7 @@ export async function onRequestPost(context) {
       status: 'sent',
       sentAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      sentVia: 'resend',
       resendId: result.id ?? null,
     };
 

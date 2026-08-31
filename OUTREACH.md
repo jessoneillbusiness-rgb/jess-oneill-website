@@ -36,31 +36,56 @@ Pages project → **Settings** → **Environment variables**:
 |----------|----------|-------------|
 | `OUTREACH_ADMIN_PASSWORD` | Yes | Password to sign in at `/outreach` |
 | `OUTREACH_SESSION_SECRET` | Recommended | Random string for session cookies |
-| `RESEND_API_KEY` | Optional | Only needed for one-click dashboard send |
-| `OUTREACH_FROM_EMAIL` | Optional | Verified sender for Resend |
-| `OUTREACH_REPLY_TO` | Optional | Reply-to address (defaults to `jess@ykwtalent.com`) |
+| `RESEND_API_KEY` | For dashboard send | API key from [resend.com](https://resend.com) |
+| `OUTREACH_FROM_EMAIL` | For dashboard send | Verified sender, e.g. `Jess O'Neill <partnerships@jess-oneill.com>` |
+| `OUTREACH_REPLY_TO` | Recommended | Where replies go, e.g. `jessoneill.business@gmail.com` |
+| `OUTREACH_BCC` | Optional | Inbox copy of sent emails (defaults to reply-to) |
 
-### 4. Set up Resend (optional — one-click send only)
+### 4. Set up Resend (one-click send from the dashboard)
 
-Resend is **optional**. The default workflow opens Gmail or Outlook so you send from your own inbox.
+Resend sends emails from the dashboard on your behalf. Recommended setup:
 
-If you want one-click sending from the dashboard without opening your mail app:
+#### From address (what contacts see)
+
+Resend needs a **domain you control** — you can't send as `@gmail.com` because Google owns that domain.
+
+Best options for you:
+
+| Option | Example From address |
+|--------|---------------------|
+| **jess-oneill.com** (recommended) | `Jess O'Neill <partnerships@jess-oneill.com>` |
+| **ykwtalent.com** (agency domain) | `Jess O'Neill <jess@ykwtalent.com>` |
+
+Verify the domain in Resend by adding DNS records (Resend walks you through this). Since `jess-oneill.com` is already on Cloudflare, this is straightforward.
+
+#### Replies (where responses land)
+
+Set `OUTREACH_REPLY_TO` to the inbox you actually check — e.g. `jessoneill.business@gmail.com` or your Outlook address. When a PR contact hits **Reply**, their response goes there automatically.
+
+#### Copies in your inbox
+
+By default, a **BCC copy** of each sent email goes to your reply-to address so you have a record in Gmail/Outlook. Override with `OUTREACH_BCC` if needed.
+
+#### Environment variables for Resend
+
+| Variable | Example |
+|----------|---------|
+| `RESEND_API_KEY` | Your API key from resend.com |
+| `OUTREACH_FROM_EMAIL` | `Jess O'Neill <partnerships@jess-oneill.com>` |
+| `OUTREACH_REPLY_TO` | `jessoneill.business@gmail.com` |
+| `OUTREACH_BCC` | `jessoneill.business@gmail.com` (optional — defaults to reply-to) |
+
+#### Resend setup steps
 
 1. Create a free account at [resend.com](https://resend.com)
-2. Verify your sending domain (`jess-oneill.com` or your agency domain)
-3. Create an API key and add it as `RESEND_API_KEY`
+2. **Domains** → add `jess-oneill.com` → add the DNS records Resend provides in Cloudflare
+3. **API Keys** → create a key → add as `RESEND_API_KEY` in Cloudflare Pages
+4. Add the variables above in Cloudflare Pages → Settings → Environment variables
+5. Redeploy the site
 
-## Sending with Gmail or Outlook (recommended)
+## Sending with Gmail or Outlook (alternative)
 
-No extra email service is required.
-
-1. Review and edit the draft in `/outreach`
-2. Click **Open in Gmail** or **Open in Outlook**
-3. Your mail app opens with the recipient, subject, and body pre-filled
-4. Send from there — it appears in your normal Sent folder and replies go to your inbox
-5. Click **Mark as sent** in the dashboard to track what you've sent
-
-This works with `jessoneill.business@gmail.com`, Outlook/Microsoft 365, and most mail apps via **Open in mail app**.
+If you prefer not to use Resend, you can still open pre-filled drafts in Gmail or Outlook from the dashboard — no API keys needed. See steps in the dashboard help text.
 
 ## CSV import format
 

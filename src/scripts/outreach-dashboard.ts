@@ -220,7 +220,8 @@ function renderDraftCard(draft: Draft, mode: 'pending' | 'sent') {
         <textarea class="draft-body" rows="12">${escapeHtml(draft.body)}</textarea>
       </label>
       <p class="outreach-draft__help">
-        Review and edit below, then open in Gmail or Outlook to send from your own inbox.
+        Review and edit below. Use <strong>Send from dashboard</strong> (Resend) for one-click send,
+        or open in Gmail/Outlook to send from your mail app.
       </p>
       <div class="outreach-draft__actions">
         <button type="button" class="btn btn--primary draft-gmail">Open in Gmail</button>
@@ -228,7 +229,7 @@ function renderDraftCard(draft: Draft, mode: 'pending' | 'sent') {
         <button type="button" class="btn btn--outline-dark draft-mailto">Open in mail app</button>
         <button type="button" class="btn btn--outline-dark draft-save">Save edits</button>
         <button type="button" class="outreach-link-btn draft-mark-sent">Mark as sent</button>
-        <button type="button" class="outreach-link-btn draft-resend" hidden>Send via Resend</button>
+        <button type="button" class="btn btn--primary draft-resend">Send from dashboard</button>
         <button type="button" class="outreach-link-btn draft-delete">Delete draft</button>
       </div>
     </article>
