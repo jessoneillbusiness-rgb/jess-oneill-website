@@ -6,7 +6,7 @@ export const site = {
     'Travel discoveries, food favourites, beauty rituals, and lifestyle inspiration — shared from Jess O\'Neill.',
   url: 'https://www.jess-oneill.com',
   author: "Jess O'Neill",
-  email: 'hello@jess-oneill.com',
+  email: 'jessoneill.business@gmail.com',
 } as const;
 
 export const categories = [
