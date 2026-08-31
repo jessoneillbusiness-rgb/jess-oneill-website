@@ -119,3 +119,10 @@ Always use publicly listed business emails and follow CAN-SPAM / GDPR best pract
 ## Updating the default email template
 
 Edit `functions/lib/outreach-templates.js` to change the default subject and body used when generating drafts.
+
+## Media kit link in outreach emails
+
+Outreach drafts currently link to the **Canva media kit**:
+`https://canva.link/q2i85mbldexvw9v`
+
+To switch back to the website media kit later, update `functions/lib/outreach-media-kit.js`.

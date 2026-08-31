@@ -1,4 +1,5 @@
-const MEDIA_KIT_URL = 'https://www.jess-oneill.com/media-kit';
+import { MEDIA_KIT_LABEL, MEDIA_KIT_URL } from './outreach-media-kit.js';
+
 const BUSINESS_EMAIL = 'jessoneill.business@gmail.com';
 
 export function buildDraftEmail(contact) {
@@ -18,7 +19,7 @@ ${categoryLine}
 
 I'm Jess O'Neill, a NYC-based creator focused on travel, food, beauty, and lifestyle. I share polished, relatable content with an engaged audience across Instagram, TikTok, Facebook, and my site.
 
-My media kit includes live audience stats and collaboration options:
+You can view my media kit here — it includes audience stats, platform info, and collaboration options:
 ${MEDIA_KIT_URL}
 
 I'd love to explore how we could work together on a campaign, launch, or brand story. Happy to share ideas tailored to ${company}'s goals.
@@ -36,7 +37,7 @@ export function buildHtmlEmail(subject, body, contact) {
     .split('\n')
     .map((line) => {
       if (line.startsWith('http')) {
-        return `<p><a href="${line}">${line}</a></p>`;
+        return `<p><a href="${line}">${MEDIA_KIT_LABEL}</a></p>`;
       }
       return `<p>${line || '&nbsp;'}</p>`;
     })
@@ -48,7 +49,7 @@ export function buildHtmlEmail(subject, body, contact) {
 ${htmlBody}
 <hr style="border: none; border-top: 1px solid #e2e2e2; margin: 24px 0;" />
 <p style="font-size: 12px; color: #5c5c5c;">
-  Media kit: <a href="${MEDIA_KIT_URL}">${MEDIA_KIT_URL}</a>
+  ${MEDIA_KIT_LABEL}: <a href="${MEDIA_KIT_URL}">${MEDIA_KIT_URL}</a>
 </p>
 </body>
 </html>`;
