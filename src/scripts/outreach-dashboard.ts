@@ -18,6 +18,7 @@ type Draft = {
   subject: string;
   body: string;
   sentAt?: string;
+  sentVia?: string;
 };
 
 const loginEl = document.getElementById('outreach-login')!;
@@ -33,6 +34,7 @@ const selectAll = document.getElementById('select-all-contacts') as HTMLInputEle
 
 let contacts: Contact[] = [];
 let drafts: Draft[] = [];
+let resendEnabled = false;
 const selectedContactIds = new Set<string>();
 
 async function api<T>(url: string, options: RequestInit = {}): Promise<T> {
@@ -76,12 +78,14 @@ async function checkAuth() {
 }
 
 async function loadData() {
-  const [contactsRes, draftsRes] = await Promise.all([
+  const [contactsRes, draftsRes, configRes] = await Promise.all([
     api<{ contacts: Contact[] }>('/api/outreach/contacts'),
     api<{ drafts: Draft[] }>('/api/outreach/drafts'),
+    api<{ resendEnabled: boolean }>('/api/outreach/config').catch(() => ({ resendEnabled: false })),
   ]);
   contacts = contactsRes.contacts;
   drafts = draftsRes.drafts;
+  resendEnabled = configRes.resendEnabled;
   renderContacts();
   renderDrafts();
   renderSent();
@@ -134,6 +138,53 @@ function renderContacts() {
   });
 }
 
+function buildGmailComposeUrl(to: string, subject: string, body: string) {
+  const params = new URLSearchParams({
+    view: 'cm',
+    fs: '1',
+    to,
+    su: subject,
+    body,
+  });
+  return `https://mail.google.com/mail/?${params.toString()}`;
+}
+
+function buildOutlookComposeUrl(to: string, subject: string, body: string) {
+  const params = new URLSearchParams({ to, subject, body });
+  return `https://outlook.office.com/mail/deeplink/compose?${params.toString()}`;
+}
+
+function buildMailtoUrl(to: string, subject: string, body: string) {
+  const params = new URLSearchParams({ subject, body });
+  return `mailto:${encodeURIComponent(to)}?${params.toString()}`;
+}
+
+async function saveDraftEdits(id: string, subject: string, body: string) {
+  await api('/api/outreach/drafts', {
+    method: 'PUT',
+    body: JSON.stringify({ id, subject, body }),
+  });
+}
+
+async function markDraftSent(id: string, subject: string, body: string, sentVia: string) {
+  await api('/api/outreach/drafts', {
+    method: 'PUT',
+    body: JSON.stringify({ id, subject, body, status: 'sent', sentVia }),
+  });
+}
+
+function openCompose(url: string) {
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function formatSentVia(value: string) {
+  if (value === 'gmail') return 'Gmail';
+  if (value === 'outlook') return 'Outlook';
+  if (value === 'mailto') return 'Mail app';
+  if (value === 'resend') return 'Resend';
+  return 'Manual';
+}
+
 function renderDraftCard(draft: Draft, mode: 'pending' | 'sent') {
   if (mode === 'sent') {
     return `
@@ -143,7 +194,7 @@ function renderDraftCard(draft: Draft, mode: 'pending' | 'sent') {
             <h3>${escapeHtml(draft.contactName)} · ${escapeHtml(draft.contactCompany)}</h3>
             <p>${escapeHtml(draft.contactEmail)}</p>
           </div>
-          <span class="outreach-badge outreach-badge--sent">Sent ${draft.sentAt ? new Date(draft.sentAt).toLocaleString() : ''}</span>
+          <span class="outreach-badge outreach-badge--sent">Sent ${draft.sentAt ? new Date(draft.sentAt).toLocaleString() : ''}${draft.sentVia ? ` · ${escapeHtml(formatSentVia(draft.sentVia))}` : ''}</span>
         </header>
         <p class="outreach-draft__subject"><strong>Subject:</strong> ${escapeHtml(draft.subject)}</p>
         <pre class="outreach-draft__preview">${escapeHtml(draft.body)}</pre>
@@ -168,9 +219,16 @@ function renderDraftCard(draft: Draft, mode: 'pending' | 'sent') {
         <span>Email body</span>
         <textarea class="draft-body" rows="12">${escapeHtml(draft.body)}</textarea>
       </label>
+      <p class="outreach-draft__help">
+        Review and edit below, then open in Gmail or Outlook to send from your own inbox.
+      </p>
       <div class="outreach-draft__actions">
-        <button type="button" class="btn btn--primary draft-send">Approve & send</button>
+        <button type="button" class="btn btn--primary draft-gmail">Open in Gmail</button>
+        <button type="button" class="btn btn--primary draft-outlook">Open in Outlook</button>
+        <button type="button" class="btn btn--outline-dark draft-mailto">Open in mail app</button>
         <button type="button" class="btn btn--outline-dark draft-save">Save edits</button>
+        <button type="button" class="outreach-link-btn draft-mark-sent">Mark as sent</button>
+        <button type="button" class="outreach-link-btn draft-resend" hidden>Send via Resend</button>
         <button type="button" class="outreach-link-btn draft-delete">Delete draft</button>
       </div>
     </article>
@@ -185,6 +243,10 @@ function renderDrafts() {
   }
 
   draftsList.innerHTML = pending.map((draft) => renderDraftCard(draft, 'pending')).join('');
+
+  draftsList.querySelectorAll('.draft-resend').forEach((button) => {
+    button.hidden = !resendEnabled;
+  });
 
   draftsList.querySelectorAll('.outreach-draft').forEach((card) => {
     const id = (card as HTMLElement).dataset.draftId!;
@@ -207,10 +269,53 @@ function renderDrafts() {
       showAlert('Draft deleted.');
     });
 
-    card.querySelector('.draft-send')?.addEventListener('click', async () => {
+    card.querySelector('.draft-gmail')?.addEventListener('click', async () => {
+      const subject = subjectInput.value;
+      const body = bodyInput.value;
+      const draft = drafts.find((item) => item.id === id);
+      if (!draft) return;
+
+      await saveDraftEdits(id, subject, body);
+      openCompose(buildGmailComposeUrl(draft.contactEmail, subject, body));
+      showAlert('Gmail opened. Send the email there, then mark as sent when done.');
+    });
+
+    card.querySelector('.draft-outlook')?.addEventListener('click', async () => {
+      const subject = subjectInput.value;
+      const body = bodyInput.value;
+      const draft = drafts.find((item) => item.id === id);
+      if (!draft) return;
+
+      await saveDraftEdits(id, subject, body);
+      openCompose(buildOutlookComposeUrl(draft.contactEmail, subject, body));
+      showAlert('Outlook opened. Send the email there, then mark as sent when done.');
+    });
+
+    card.querySelector('.draft-mailto')?.addEventListener('click', async () => {
+      const subject = subjectInput.value;
+      const body = bodyInput.value;
+      const draft = drafts.find((item) => item.id === id);
+      if (!draft) return;
+
+      await saveDraftEdits(id, subject, body);
+      window.location.href = buildMailtoUrl(draft.contactEmail, subject, body);
+    });
+
+    card.querySelector('.draft-mark-sent')?.addEventListener('click', async () => {
       const draft = drafts.find((item) => item.id === id);
       const recipient = draft?.contactEmail ?? 'this contact';
-      if (!confirm(`Send this email to ${recipient}?`)) return;
+      if (!confirm(`Mark this email as sent to ${recipient}?`)) return;
+
+      await markDraftSent(id, subjectInput.value, bodyInput.value, 'manual');
+      await loadData();
+      showAlert('Marked as sent.');
+      activateTab('sent');
+    });
+
+    card.querySelector('.draft-resend')?.addEventListener('click', async () => {
+      const draft = drafts.find((item) => item.id === id);
+      const recipient = draft?.contactEmail ?? 'this contact';
+      if (!confirm(`Send this email to ${recipient} via Resend?`)) return;
 
       try {
         await api('/api/outreach/send', {
@@ -222,7 +327,7 @@ function renderDrafts() {
           }),
         });
         await loadData();
-        showAlert('Email sent.');
+        showAlert('Email sent via Resend.');
         activateTab('sent');
       } catch (error) {
         showAlert(error instanceof Error ? error.message : 'Send failed', 'error');

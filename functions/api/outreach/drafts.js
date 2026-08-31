@@ -89,13 +89,20 @@ export async function onRequestPut(context) {
     const index = drafts.findIndex((item) => item.id === body.id);
     if (index === -1) return json({ error: 'Draft not found' }, 404);
 
-    drafts[index] = {
+    const next = {
       ...drafts[index],
       subject: String(body.subject ?? drafts[index].subject).trim(),
       body: String(body.body ?? drafts[index].body).trim(),
       status: body.status ?? drafts[index].status,
       updatedAt: new Date().toISOString(),
     };
+
+    if (body.status === 'sent' && drafts[index].status !== 'sent') {
+      next.sentAt = new Date().toISOString();
+      next.sentVia = body.sentVia || 'manual';
+    }
+
+    drafts[index] = next;
 
     await saveDrafts(context.env, drafts);
     return json({ draft: drafts[index] });
