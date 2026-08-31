@@ -2,7 +2,7 @@
  * Media metrics API — auto-updated stats for the public media kit page.
  */
 
-import { getMediaMetrics } from '../../lib/media-metrics.js';
+import { getMediaMetrics } from '../lib/media-metrics.js';
 
 export async function onRequestGet(context) {
   const cache = caches.default;
