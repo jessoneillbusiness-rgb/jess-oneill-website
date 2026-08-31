@@ -6,34 +6,8 @@ interface Props {
 
 const { variant = 'light', class: className = '' } = Astro.props;
 const variantClass = variant === 'dark' ? 'btn--outline' : 'btn--outline-dark';
-
-const socialUrls = Object.fromEntries(
-  (await import('../config/site')).socialChannels.map((c) => [c.name, c.url]),
-);
 ---
 
 <button type="button" class={`btn ${variantClass} media-kit-download ${className}`} data-variant={variant}>
   Download PDF
 </button>
-
-<script define:vars={{ mediaKitContent: (await import('../config/media-kit')).mediaKit, socialUrls }}>
-  async function handleDownload(button) {
-    const original = button.textContent;
-    button.textContent = 'Generating PDF…';
-    button.setAttribute('disabled', 'true');
-
-    try {
-      const { generateMediaKitPdf } = await import('../lib/generate-media-kit-pdf.ts');
-      await generateMediaKitPdf(mediaKitContent, socialUrls);
-    } catch {
-      alert('Sorry, the PDF could not be generated. Please try again or use the contact email.');
-    } finally {
-      button.textContent = original;
-      button.removeAttribute('disabled');
-    }
-  }
-
-  document.querySelectorAll('.media-kit-download').forEach((button) => {
-    button.addEventListener('click', () => handleDownload(button));
-  });
-</script>

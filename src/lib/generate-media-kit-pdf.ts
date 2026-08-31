@@ -89,7 +89,7 @@ function sectionTitle(doc: jsPDF, label: string, y: number): number {
   return y + 9;
 }
 
-function sectionTitle(doc: jsPDF, label: string, y: number): number {
+function buildPlatformRows(platform: PlatformMetrics | undefined, insights: PlatformMetrics['insights']) {
   const rows: Array<[string, string]> = [['Followers', fmt(platform?.followers, true)]];
 
   if (platform?.posts != null) rows.push(['Posts', fmt(platform.posts)]);
