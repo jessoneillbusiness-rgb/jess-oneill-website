@@ -111,6 +111,10 @@ function formatPlainParagraph(lines) {
     .join('\n');
 }
 
+function formatPlainTextClosing() {
+  return `Best,\n${formatPlainSignature()}\n\n(Attached: Jess O'Neill Media Kit PDF)`;
+}
+
 function renderHtmlParagraph(lines) {
   const chunks = [];
 
@@ -185,7 +189,7 @@ ${introParagraph}
 
 ${categoryLine}
 
-My media kit includes audience stats, platform info, and collaboration options:
+My media kit is attached (PDF). You can also view it online here:
 ${MEDIA_KIT_LINK_TEXT}
 
 I'd love to explore how we could work together on a campaign, launch, or brand story. Happy to share ideas tailored to ${company}'s goals.
@@ -210,10 +214,38 @@ export function formatPlainTextEmail(body) {
   const parts = [...paragraphs];
 
   if (hasClosing(body)) {
-    parts.push(`Best,\n${formatPlainSignature()}`);
+    parts.push(formatPlainTextClosing());
   }
 
   return parts.join('\n\n');
+}
+
+const EMAIL_INSET = '24px';
+
+function wrapEmailHtml(content) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; -webkit-text-size-adjust: 100%;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 0; padding: 0; background-color: #ffffff; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 24px 16px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width: 100%; max-width: 600px; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 0 ${EMAIL_INSET}; font-family: ${GMAIL_FONT}; font-size: ${EMAIL_FONT_SIZE}; color: ${EMAIL_TEXT_COLOR}; line-height: 1.5;">
+${content}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 }
 
 export function buildHtmlEmail(body) {
@@ -225,17 +257,5 @@ export function buildHtmlEmail(body) {
     htmlParts.push(buildSignatureHtml());
   }
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Email</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #ffffff;">
-  <div style="margin: 0; padding: 0; font-family: ${GMAIL_FONT}; font-size: ${EMAIL_FONT_SIZE}; color: ${EMAIL_TEXT_COLOR}; line-height: 1.5; max-width: 600px;">
-${htmlParts.join('\n')}
-  </div>
-</body>
-</html>`;
+  return wrapEmailHtml(htmlParts.join('\n'));
 }

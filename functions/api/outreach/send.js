@@ -5,6 +5,7 @@ import {
   resolveReplyTo,
 } from '../../lib/outreach-email.js';
 import { buildHtmlEmail, formatPlainTextEmail } from '../../lib/outreach-templates.js';
+import { buildMediaKitAttachment } from '../../lib/outreach-media-kit.js';
 import { listDrafts, saveDrafts } from '../../lib/outreach-store.js';
 
 function resendErrorMessage(result) {
@@ -63,6 +64,7 @@ export async function onRequestPost(context) {
       subject,
       text: textBody,
       html: buildHtmlEmail(sourceBody),
+      attachments: [buildMediaKitAttachment()],
     };
 
     const response = await fetch('https://api.resend.com/emails', {
