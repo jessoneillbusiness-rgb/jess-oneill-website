@@ -43,7 +43,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <button type="button" class="outreach-tab" data-tab="sent">Sent</button>
         </div>
 
-        <div id="outreach-alert" class="outreach-alert" hidden></div>
+        <div id="outreach-alert" class="outreach-alert" hidden>
+          <p id="outreach-alert-message"></p>
+          <button type="button" class="outreach-alert__dismiss" id="outreach-alert-dismiss" hidden>Dismiss</button>
+        </div>
 
         <section id="tab-contacts" class="outreach-tab-panel">
           <div class="outreach-split">

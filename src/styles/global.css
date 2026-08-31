@@ -1517,6 +1517,22 @@ p {
   margin-bottom: 1rem;
 }
 
+.outreach-alert p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.outreach-alert__dismiss {
+  margin-top: 0.75rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .outreach-alert--success {
   background: var(--color-accent-soft);
   color: var(--color-text);

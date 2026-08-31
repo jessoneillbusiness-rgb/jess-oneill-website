@@ -26,6 +26,8 @@ const dashboardEl = document.getElementById('outreach-dashboard')!;
 const loginForm = document.getElementById('outreach-login-form') as HTMLFormElement;
 const loginError = document.getElementById('outreach-login-error')!;
 const alertEl = document.getElementById('outreach-alert')!;
+const alertMessageEl = document.getElementById('outreach-alert-message')!;
+const alertDismissEl = document.getElementById('outreach-alert-dismiss') as HTMLButtonElement;
 const contactsBody = document.getElementById('contacts-table-body')!;
 const draftsList = document.getElementById('drafts-list')!;
 const sentList = document.getElementById('sent-list')!;
@@ -72,13 +74,22 @@ async function api<T>(url: string, options: RequestInit = {}): Promise<T> {
 }
 
 function showAlert(message: string, type: 'success' | 'error' = 'success') {
-  alertEl.textContent = message;
+  alertMessageEl.textContent = message;
   alertEl.className = `outreach-alert outreach-alert--${type}`;
   alertEl.hidden = false;
+  alertDismissEl.hidden = type !== 'error';
+  alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  if (type === 'error') return;
+
   window.setTimeout(() => {
     alertEl.hidden = true;
   }, 5000);
 }
+
+alertDismissEl.addEventListener('click', () => {
+  alertEl.hidden = true;
+});
 
 function setAuthenticated(isAuthed: boolean) {
   loginEl.hidden = isAuthed;
