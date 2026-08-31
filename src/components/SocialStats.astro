@@ -88,12 +88,28 @@ const channelLinks = Object.fromEntries(
       for (const channel of data.channels) {
         const card = document.querySelector(`[data-channel="${channel.id}"]`);
         const countEl = card?.querySelector('.social-stats__count');
+        const labelEl = card?.querySelector('.social-stats__label');
+
         if (countEl) {
-          animateCount(countEl, channel.count);
+          if (channel.count === null && channel.id === 'facebook') {
+            countEl.textContent = 'Follow';
+            countEl.style.fontSize = '1.35rem';
+            if (labelEl) labelEl.textContent = 'on Facebook';
+          } else {
+            animateCount(countEl, channel.count);
+          }
         }
       }
 
       const totalEl = document.getElementById('social-stats-total');
+      const totalLabelEl = document.querySelector('.social-stats__total-label');
+      const facebookIncluded = data.channels.some((c) => c.id === 'facebook' && c.count !== null);
+
+      if (totalLabelEl) {
+        totalLabelEl.textContent = facebookIncluded
+          ? 'Total community'
+          : 'Total on Instagram & TikTok';
+      }
       if (totalEl) {
         animateCount(totalEl, data.total > 0 ? data.total : null);
       }

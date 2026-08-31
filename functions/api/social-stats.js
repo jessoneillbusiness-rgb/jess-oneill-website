@@ -159,10 +159,12 @@ async function fetchFacebook(env) {
     );
     if (response.ok) {
       const data = await response.json();
-      return data.followers_count ?? data.fan_count ?? null;
+      const count = data.followers_count ?? data.fan_count ?? null;
+      if (count !== null) return count;
     }
   }
 
+  // Set in Cloudflare → Settings → Environment variables (no Meta developer account needed)
   const manual = env.FACEBOOK_FOLLOWER_COUNT;
   if (manual) {
     const parsed = Number.parseInt(manual, 10);
