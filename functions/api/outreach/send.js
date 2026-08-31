@@ -1,6 +1,6 @@
 import { authError, isAuthenticated, json } from '../../lib/outreach-auth.js';
 import { OUTREACH_BUSINESS_EMAIL } from '../../lib/outreach-email.js';
-import { buildHtmlEmail } from '../../lib/outreach-templates.js';
+import { buildHtmlEmail, formatPlainTextEmail } from '../../lib/outreach-templates.js';
 import { listDrafts, saveDrafts } from '../../lib/outreach-store.js';
 
 export async function onRequestPost(context) {
@@ -42,7 +42,7 @@ export async function onRequestPost(context) {
     }
 
     const subject = String(body.subject ?? draft.subject).trim();
-    const textBody = String(body.body ?? draft.body).trim();
+    const textBody = formatPlainTextEmail(String(body.body ?? draft.body).trim());
 
     const payload = {
       from: fromEmail,
@@ -51,7 +51,7 @@ export async function onRequestPost(context) {
       bcc: [bcc],
       subject,
       text: textBody,
-      html: buildHtmlEmail(subject, textBody, draft),
+      html: buildHtmlEmail(String(body.body ?? draft.body).trim()),
     };
 
     const response = await fetch('https://api.resend.com/emails', {
