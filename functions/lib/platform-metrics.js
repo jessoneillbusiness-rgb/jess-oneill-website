@@ -3,6 +3,13 @@
  * Env vars override computed insight values when set.
  */
 
+import {
+  fetchTikTokRecentVideos,
+  fetchTikTokUserInfo,
+  resolveTikTokAccessToken,
+} from './tiktok-api.js';
+import { getTikTokTokens } from './tiktok-token-store.js';
+
 export const INSTAGRAM_USERNAME = 'jess.oneill';
 export const TIKTOK_USERNAME = 'imjesschillin';
 
@@ -413,13 +420,6 @@ export async function fetchInstagramProfile(env = {}, options = {}) {
 
   return null;
 }
-
-import {
-  fetchTikTokRecentVideos,
-  fetchTikTokUserInfo,
-  getTikTokTokens,
-  resolveTikTokAccessToken,
-} from './tiktok-api.js';
 
 async function fetchTikTokProfileFromApi(env, timeoutMs) {
   const tokens = await getTikTokTokens(env);
