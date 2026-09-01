@@ -728,6 +728,23 @@ generateBtn.addEventListener('click', async () => {
   }
 });
 
+document.getElementById('import-target-brands')?.addEventListener('click', async () => {
+  if (!confirm('Import researched PR emails for the target brand list? Existing matching emails will be skipped.')) {
+    return;
+  }
+
+  try {
+    const result = await api<{ imported: number }>('/api/outreach/enrich', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'import-default' }),
+    });
+    await loadData();
+    showAlert(`Imported ${result.imported} target brand contacts. Review them before generating drafts.`);
+  } catch (error) {
+    showAlert(error instanceof Error ? error.message : 'Import failed', 'error');
+  }
+});
+
 document.getElementById('csv-import')?.addEventListener('change', async (event) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
