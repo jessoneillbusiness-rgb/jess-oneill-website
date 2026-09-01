@@ -36,7 +36,7 @@ async function fetchFacebook(env) {
         const data = await response.json();
         const followers = data.followers_count ?? data.fan_count ?? null;
         if (followers !== null) {
-          return { followers, pageId, automated: true };
+          return { followers, automated: true };
         }
       }
     } catch {
@@ -46,22 +46,8 @@ async function fetchFacebook(env) {
 
   const manual = resolveFacebookFollowers(env);
   return manual !== null
-    ? { followers: manual, pageId, automated: false }
+    ? { followers: manual, automated: false }
     : null;
-}
-
-function envNumber(env, key) {
-  const value = env?.[key];
-  if (!value) return null;
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function buildFacebookInsights(env) {
-  return {
-    monthlyReach: envNumber(env, 'FACEBOOK_MONTHLY_REACH'),
-    pageViews: envNumber(env, 'FACEBOOK_PAGE_VIEWS'),
-  };
 }
 
 export async function getMediaMetrics(env = {}, options = {}) {
@@ -104,11 +90,9 @@ export async function getMediaMetrics(env = {}, options = {}) {
         facebook: facebook
           ? {
               followers: facebook.followers,
-              pageId: facebook.pageId,
               automated: facebook.automated,
-              insights: buildFacebookInsights(env),
             }
-          : { insights: buildFacebookInsights(env) },
+          : null,
       },
       totals: {
         audience: totalAudience || null,

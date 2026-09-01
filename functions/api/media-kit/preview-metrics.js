@@ -48,7 +48,6 @@ export async function onRequestGet(context) {
       platforms: {
         instagram: pickPlatform(metrics.platforms?.instagram),
         tiktok: pickPlatform(metrics.platforms?.tiktok),
-        facebook: pickPlatform(metrics.platforms?.facebook),
       },
     });
   } catch {
@@ -60,7 +59,6 @@ export async function onRequestGet(context) {
       platforms: {
         instagram: null,
         tiktok: null,
-        facebook: null,
       },
     });
   }

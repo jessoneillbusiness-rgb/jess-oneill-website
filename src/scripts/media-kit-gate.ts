@@ -22,7 +22,6 @@ type PreviewMetrics = {
   platforms: {
     instagram: PreviewPlatform | null;
     tiktok: PreviewPlatform | null;
-    facebook: PreviewPlatform | null;
   };
 };
 

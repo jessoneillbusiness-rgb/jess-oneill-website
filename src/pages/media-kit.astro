@@ -274,22 +274,17 @@ import { socialChannels } from '../config/site';
         tt.insights?.monthlyViews != null ? metricRow('Monthly Views', tt.insights.monthlyViews, true) : '',
       ].join('');
 
-      const fbInsights = [
-        fb.insights?.monthlyReach != null ? metricRow('Monthly Reach', fb.insights.monthlyReach, true) : '',
-        fb.insights?.pageViews != null ? metricRow('Page Views', fb.insights.pageViews, true) : '',
-      ].join('');
-
       const fbNote =
         fb.followers != null && fb.automated === false
-          ? `<p class="media-kit-metric__note">Facebook follower count is updated manually until Meta API access is connected.</p>`
+          ? `<p class="media-kit-metric__note">Follower count updated manually until Meta API access is connected.</p>`
           : '';
 
       if (container) {
         container.innerHTML = [
           renderPlatform('Instagram', 'jess.oneill', 'https://www.instagram.com/jess.oneill/', ig, igInsights),
           renderPlatform('TikTok', 'imjesschillin', 'https://www.tiktok.com/@imjesschillin', tt, ttInsights),
-          fb.followers != null || fbInsights
-            ? `${renderPlatform('Facebook', 'Jess-Oneill', 'https://www.facebook.com/people/Jess-Oneill/61575124581812/', fb, fbInsights)}${fbNote}`
+          fb?.followers != null
+            ? `${renderPlatform('Facebook', 'Jess-Oneill', 'https://www.facebook.com/people/Jess-Oneill/61575124581812/', fb, '')}${fbNote}`
             : '',
         ].join('');
       }
