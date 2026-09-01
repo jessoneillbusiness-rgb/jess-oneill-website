@@ -1,5 +1,5 @@
 ---
-import { site, socialLinks } from '../config/site';
+import { site } from '../config/site';
 import SocialLinks from './SocialLinks.astro';
 
 const year = new Date().getFullYear();
@@ -8,11 +8,10 @@ const year = new Date().getFullYear();
 <footer class="site-footer">
   <div class="container">
     <nav class="site-footer__links" aria-label="Footer navigation">
-      <a href="/blog">Journal</a>
-      <a href="/about">About</a>
-      <a href="/modeling">Modeling</a>
       <a href="/media-kit">Media Kit</a>
       <a href="/contact">Contact</a>
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/terms">Terms of Service</a>
     </nav>
     <SocialLinks variant="inline" />
     <p style="margin-top: 1.5rem;">
