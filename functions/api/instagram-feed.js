@@ -11,6 +11,10 @@ import {
 
 const FEED_LIMIT = 10;
 
+function proxyImageUrl(imageUrl) {
+  return `/api/instagram-image?src=${encodeURIComponent(imageUrl)}`;
+}
+
 export async function onRequestGet(context) {
   const cache = caches.default;
   const cacheKey = new Request(context.request.url, { method: 'GET' });
@@ -21,7 +25,10 @@ export async function onRequestGet(context) {
   }
 
   const profile = await fetchInstagramProfile(context.env, { timeoutMs: 5000 });
-  const posts = mapInstagramFeedItems(profile?.timeline ?? [], FEED_LIMIT);
+  const posts = mapInstagramFeedItems(profile?.timeline ?? [], FEED_LIMIT).map((post) => ({
+    ...post,
+    imageUrl: proxyImageUrl(post.imageUrl),
+  }));
   const cacheSeconds = posts.length > 0 ? 3600 : 600;
 
   const body = JSON.stringify({

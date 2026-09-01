@@ -73,6 +73,56 @@ function parseInstagramHtml(html) {
   return null;
 }
 
+function parseInstagramTimelineFromHtml(html) {
+  const marker = '"edge_owner_to_timeline_media":';
+  const start = html.indexOf(marker);
+  if (start === -1) return [];
+
+  const edgesMarker = '"edges":[';
+  const edgesStart = html.indexOf(edgesMarker, start);
+  if (edgesStart === -1) return [];
+
+  const arrayStart = edgesStart + edgesMarker.length - 1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = arrayStart; index < html.length; index += 1) {
+    const char = html[index];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === '\\') {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (char === '[') depth += 1;
+    if (char === ']') {
+      depth -= 1;
+      if (depth === 0) {
+        try {
+          const edges = JSON.parse(html.slice(arrayStart, index + 1));
+          return Array.isArray(edges) ? edges : [];
+        } catch {
+          return [];
+        }
+      }
+    }
+  }
+
+  return [];
+}
+
 function mapInstagramUser(user) {
   if (!user) return null;
 
@@ -349,7 +399,14 @@ async function fetchInstagramFollowerFallback(env, timeoutMs) {
     if (response.ok) {
       const html = await response.text();
       const fallback = parseInstagramHtml(html);
-      if (fallback) return { ...fallback, timeline: [] };
+      const timeline = parseInstagramTimelineFromHtml(html);
+      if (fallback || timeline.length) {
+        return {
+          followers: fallback?.followers ?? null,
+          username: INSTAGRAM_USERNAME,
+          timeline,
+        };
+      }
     }
   } catch {
     // fall through
