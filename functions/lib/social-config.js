@@ -4,7 +4,7 @@
  */
 
 /** Set a number here, or use FACEBOOK_FOLLOWER_COUNT in Cloudflare env vars. */
-export const FACEBOOK_FOLLOWER_FALLBACK = 16000;
+export const FACEBOOK_FOLLOWER_FALLBACK = 16500;
 
 export function resolveFacebookFollowers(env = {}) {
   const fromEnv = env.FACEBOOK_FOLLOWER_COUNT;
