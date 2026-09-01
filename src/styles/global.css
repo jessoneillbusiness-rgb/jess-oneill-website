@@ -527,6 +527,80 @@ p {
   border-radius: var(--radius-sm);
 }
 
+/* Instagram feed grid */
+.instagram-feed__grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+}
+
+.instagram-feed__item {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+}
+
+.instagram-feed__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s ease;
+}
+
+.instagram-feed__item:hover img {
+  transform: scale(1.04);
+}
+
+.instagram-feed__badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 55%);
+  color: #fff;
+}
+
+.instagram-feed__skeleton {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--color-border) 0%,
+    var(--color-surface) 50%,
+    var(--color-border) 100%
+  );
+  background-size: 200% 100%;
+  animation: instagram-feed-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes instagram-feed-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.instagram-feed__status {
+  margin-top: 1rem;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.instagram-feed__status a {
+  color: var(--color-accent);
+}
+
 /* Post grid — Vogue article cards */
 .post-grid {
   display: grid;
@@ -1865,6 +1939,10 @@ p {
 
   .photo-strip img {
     aspect-ratio: 4 / 3;
+  }
+
+  .instagram-feed__grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .section {

@@ -4,6 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PostCard from '../components/PostCard.astro';
 import SocialLinks from '../components/SocialLinks.astro';
 import SocialStats from '../components/SocialStats.astro';
+import InstagramFeed from '../components/InstagramFeed.astro';
 import { getCollection } from 'astro:content';
 import { site, categories } from '../config/site';
 
@@ -58,19 +59,7 @@ const recentPosts = allPosts.slice(1, 4);
     </div>
   </section>
 
-  <section class="section section--compact">
-    <div class="container">
-      <div class="section__header">
-        <p class="section__eyebrow">Moments</p>
-        <h2 class="section__title">Life & Style</h2>
-      </div>
-      <div class="photo-strip">
-        <img src="/images/photos/travel-terrace.jpg" alt="Jess in a lilac dress on a terrace overlooking the mountains" loading="lazy" />
-        <img src="/images/photos/lake-view.jpg" alt="Jess in a polka dot dress on a terrace overlooking a lake" loading="lazy" />
-        <img src="/images/photos/evening-style.jpg" alt="Jess in a floral corset dress in an elegant bedroom" loading="lazy" />
-      </div>
-    </div>
-  </section>
+  <InstagramFeed />
 
   {recentPosts.length > 0 && (
     <section class="section">

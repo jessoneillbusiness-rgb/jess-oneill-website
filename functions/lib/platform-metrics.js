@@ -78,6 +78,42 @@ function mapInstagramUser(user) {
   };
 }
 
+/** Map recent Instagram timeline edges to homepage feed items. */
+export function mapInstagramFeedItems(timeline = [], limit = 10) {
+  const items = [];
+
+  for (const edge of timeline) {
+    if (items.length >= limit) break;
+
+    const node = edge?.node;
+    const shortcode = node?.shortcode;
+    if (!shortcode) continue;
+
+    const imageUrl =
+      node.thumbnail_src ??
+      node.display_url ??
+      node.display_resources?.[node.display_resources.length - 1]?.src ??
+      null;
+
+    if (!imageUrl) continue;
+
+    const username = node.owner?.username ?? INSTAGRAM_USERNAME;
+    const caption = node.edge_media_to_caption?.edges?.[0]?.node?.text ?? '';
+
+    items.push({
+      id: node.id ?? shortcode,
+      shortcode,
+      url: `https://www.instagram.com/p/${shortcode}/`,
+      imageUrl,
+      alt: caption.trim() || `Instagram post by @${username}`,
+      isVideo: Boolean(node.is_video ?? node.__typename === 'GraphVideo'),
+      isCarousel: node.__typename === 'GraphSidecar',
+    });
+  }
+
+  return items;
+}
+
 export function computeInstagramInsights(profile, env = {}) {
   const followers = profile?.followers;
   const posts = profile?.timeline ?? [];

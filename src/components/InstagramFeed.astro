@@ -1,0 +1,113 @@
+---
+import { socialChannels } from '../config/site';
+
+const instagram = socialChannels.find((channel) => channel.id === 'instagram');
+const profileUrl = instagram?.url ?? 'https://www.instagram.com/jess.oneill/';
+const username = instagram?.username ?? 'jess.oneill';
+---
+
+<section class="section section--compact instagram-feed" aria-label="Latest Instagram posts">
+  <div class="container">
+    <div class="section__header">
+      <p class="section__eyebrow">@{username}</p>
+      <h2 class="section__title">Latest on Instagram</h2>
+      <p class="section__desc">
+        Recent posts from
+        <a href={profileUrl} target="_blank" rel="noopener noreferrer">@{username}</a>
+      </p>
+    </div>
+
+    <div class="instagram-feed__grid" id="instagram-feed-grid" aria-live="polite">
+      {Array.from({ length: 10 }).map(() => (
+        <div class="instagram-feed__skeleton" aria-hidden="true"></div>
+      ))}
+    </div>
+
+    <p class="instagram-feed__status" id="instagram-feed-status" hidden>
+      Couldn't load posts right now.
+      <a href={profileUrl} target="_blank" rel="noopener noreferrer">View on Instagram</a>
+    </p>
+
+    <div class="text-center mt-3">
+      <a href={profileUrl} class="btn btn--dark" target="_blank" rel="noopener noreferrer">
+        Follow @{username}
+      </a>
+    </div>
+  </div>
+</section>
+
+<script define:vars={{ profileUrl, username }}>
+  const REFRESH_MS = 60 * 60 * 1000;
+
+  function mediaBadge(post) {
+    if (post.isVideo) {
+      return `<span class="instagram-feed__badge" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+      </span>`;
+    }
+
+    if (post.isCarousel) {
+      return `<span class="instagram-feed__badge" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+        </svg>
+      </span>`;
+    }
+
+    return '';
+  }
+
+  function renderPosts(posts) {
+    const grid = document.getElementById('instagram-feed-grid');
+    const status = document.getElementById('instagram-feed-status');
+    if (!grid) return;
+
+    grid.innerHTML = posts
+      .map(
+        (post) => `
+          <a
+            href="${post.url}"
+            class="instagram-feed__item"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="View Instagram post"
+          >
+            <img src="${post.imageUrl}" alt="${post.alt.replace(/"/g, '&quot;')}" loading="lazy" decoding="async" />
+            ${mediaBadge(post)}
+          </a>
+        `,
+      )
+      .join('');
+
+    if (status) status.hidden = true;
+  }
+
+  async function loadFeed() {
+    const grid = document.getElementById('instagram-feed-grid');
+    const status = document.getElementById('instagram-feed-status');
+    if (!grid) return;
+
+    try {
+      const response = await fetch('/api/instagram-feed');
+      if (!response.ok) throw new Error('Failed to fetch feed');
+
+      const data = await response.json();
+      if (!Array.isArray(data.posts) || data.posts.length === 0) {
+        throw new Error('No posts available');
+      }
+
+      renderPosts(data.posts);
+    } catch {
+      grid.innerHTML = '';
+      if (status) status.hidden = false;
+    }
+  }
+
+  loadFeed();
+  setInterval(loadFeed, REFRESH_MS);
+</script>
