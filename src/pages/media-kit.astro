@@ -20,7 +20,9 @@ import { socialChannels } from '../config/site';
         </p>
 
         <div class="media-kit-gate__preview-total">
-          <p class="media-kit-gate__preview-total-label">Total cross-platform audience</p>
+          <p class="media-kit-gate__preview-total-label" id="media-kit-preview-total-label">
+            Total on Instagram & TikTok
+          </p>
           <p class="media-kit-gate__preview-total-value" id="media-kit-preview-total">…</p>
         </div>
 
@@ -99,7 +101,7 @@ import { socialChannels } from '../config/site';
         </div>
 
         <div class="media-kit-total">
-          <p class="media-kit-total__label">Total Cross-Platform Audience</p>
+          <p class="media-kit-total__label" id="media-kit-total-label">Total on Instagram & TikTok</p>
           <p class="media-kit-total__value" id="total-audience">…</p>
         </div>
 
@@ -230,9 +232,16 @@ import { socialChannels } from '../config/site';
       const data = await response.json();
 
       if (totalEl) {
-        totalEl.textContent = data.totals.audience
-          ? formatNumber(data.totals.audience)
-          : '—';
+        totalEl.textContent = data.totals.automatedAudience
+          ? formatNumber(data.totals.automatedAudience)
+          : data.totals.audience
+            ? formatNumber(data.totals.audience)
+            : '—';
+      }
+
+      const totalLabelEl = document.getElementById('media-kit-total-label');
+      if (totalLabelEl) {
+        totalLabelEl.textContent = 'Total on Instagram & TikTok';
       }
 
       if (updatedEl && data.updatedAt) {
@@ -258,6 +267,9 @@ import { socialChannels } from '../config/site';
 
       const ttInsights = [
         tt.insights?.avgViews != null ? metricRow('Avg. Views / Video', tt.insights.avgViews, true) : '',
+        tt.insights?.avgLikesPerVideo != null
+          ? metricRow('Avg. Likes / Video', tt.insights.avgLikesPerVideo, true)
+          : '',
         tt.insights?.avgEngagement != null ? metricRow('Avg. Engagement', `${tt.insights.avgEngagement}%`) : '',
         tt.insights?.monthlyViews != null ? metricRow('Monthly Views', tt.insights.monthlyViews, true) : '',
       ].join('');
@@ -267,11 +279,18 @@ import { socialChannels } from '../config/site';
         fb.insights?.pageViews != null ? metricRow('Page Views', fb.insights.pageViews, true) : '',
       ].join('');
 
+      const fbNote =
+        fb.followers != null && fb.automated === false
+          ? `<p class="media-kit-metric__note">Facebook follower count is updated manually until Meta API access is connected.</p>`
+          : '';
+
       if (container) {
         container.innerHTML = [
           renderPlatform('Instagram', 'jess.oneill', 'https://www.instagram.com/jess.oneill/', ig, igInsights),
           renderPlatform('TikTok', 'imjesschillin', 'https://www.tiktok.com/@imjesschillin', tt, ttInsights),
-          renderPlatform('Facebook', 'Jess-Oneill', 'https://www.facebook.com/people/Jess-Oneill/61575124581812/', fb, fbInsights),
+          fb.followers != null || fbInsights
+            ? `${renderPlatform('Facebook', 'Jess-Oneill', 'https://www.facebook.com/people/Jess-Oneill/61575124581812/', fb, fbInsights)}${fbNote}`
+            : '',
         ].join('');
       }
     } catch {

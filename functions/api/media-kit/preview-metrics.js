@@ -20,8 +20,13 @@ function pickPlatform(platform) {
     totalLikesLabel: compact(platform.totalLikes),
     avgViews: insights.avgViews ?? null,
     avgViewsLabel: compact(insights.avgViews),
+    avgLikesPerVideo: insights.avgLikesPerVideo ?? null,
+    avgLikesPerVideoLabel: compact(insights.avgLikesPerVideo),
     avgReach: insights.avgReach ?? null,
     avgReachLabel: compact(insights.avgReach),
+    avgEngagement: insights.avgEngagement ?? null,
+    avgEngagementLabel:
+      insights.avgEngagement != null ? `${insights.avgEngagement}%` : null,
     monthlyViews: insights.monthlyViews ?? null,
     monthlyViewsLabel: compact(insights.monthlyViews),
   };
@@ -29,11 +34,15 @@ function pickPlatform(platform) {
 
 export async function onRequestGet(context) {
   try {
-    const metrics = await getMediaMetrics(context.env, { timeoutMs: 5000 });
+    const metrics = await getMediaMetrics(context.env, {
+      timeoutMs: 5000,
+      includeFacebookInTotal: false,
+    });
 
     return json({
-      totalAudience: metrics.totals?.audience ?? null,
-      totalAudienceLabel: compact(metrics.totals?.audience),
+      totalAudience: metrics.totals?.automatedAudience ?? metrics.totals?.audience ?? null,
+      totalAudienceLabel: compact(metrics.totals?.automatedAudience ?? metrics.totals?.audience),
+      totalLabel: 'Total on Instagram & TikTok',
       tiktokLikes: metrics.totals?.tiktokLikes ?? null,
       tiktokLikesLabel: compact(metrics.totals?.tiktokLikes),
       platforms: {

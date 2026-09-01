@@ -102,6 +102,9 @@ function buildPlatformRows(platform: PlatformMetrics | undefined, insights: Plat
 
   if (insights?.avgReach != null) rows.push(['Avg. Reach / Post', fmt(insights.avgReach, true)]);
   if (insights?.avgViews != null) rows.push(['Avg. Views / Video', fmt(insights.avgViews, true)]);
+  if (insights?.avgLikesPerVideo != null) {
+    rows.push(['Avg. Likes / Video', fmt(insights.avgLikesPerVideo, true)]);
+  }
   if (insights?.avgEngagement != null) rows.push(['Avg. Engagement', `${insights.avgEngagement}%`]);
   if (insights?.monthlyViews != null) rows.push(['Monthly Views', fmt(insights.monthlyViews, true)]);
   if (insights?.monthlyReach != null) rows.push(['Monthly Reach', fmt(insights.monthlyReach, true)]);

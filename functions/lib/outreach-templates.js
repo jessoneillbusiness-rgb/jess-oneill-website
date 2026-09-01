@@ -177,7 +177,10 @@ export async function buildDraftEmail(contact, env = {}) {
 
   let introParagraph;
   try {
-    const metrics = await getMediaMetrics(env, { timeoutMs: 6000 });
+    const metrics = await getMediaMetrics(env, {
+      timeoutMs: 6000,
+      includeFacebookInTotal: true,
+    });
     introParagraph = buildMetricsIntroParagraph(metrics);
   } catch {
     introParagraph = buildMetricsIntroParagraph(null);

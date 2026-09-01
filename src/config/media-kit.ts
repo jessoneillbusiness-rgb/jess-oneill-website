@@ -35,5 +35,5 @@ export const mediaKit = {
     },
   ],
   pressNote:
-    'All follower counts and platform stats on this page update automatically. Reach and engagement metrics can be added as business API access is connected.',
+    'Instagram and TikTok stats on this page update automatically from public profile data. Facebook uses a manual follower count until Meta API access is connected.',
 } as const;

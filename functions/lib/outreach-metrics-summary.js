@@ -24,6 +24,9 @@ function platformSummary(name, platform) {
 
   if (insights.avgReach) details.push(`${formatCompact(insights.avgReach)} avg. reach/post`);
   if (insights.avgViews) details.push(`${formatCompact(insights.avgViews)} avg. views/video`);
+  if (insights.avgLikesPerVideo) {
+    details.push(`${formatCompact(insights.avgLikesPerVideo)} avg. likes/video`);
+  }
   if (insights.monthlyViews) details.push(`${formatCompact(insights.monthlyViews)} monthly views`);
   if (insights.avgEngagement) details.push(`${insights.avgEngagement}% avg. engagement`);
   if (insights.monthlyReach) details.push(`${formatCompact(insights.monthlyReach)} monthly reach`);

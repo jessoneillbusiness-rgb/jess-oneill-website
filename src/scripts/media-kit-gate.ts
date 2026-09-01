@@ -5,8 +5,12 @@ type PreviewPlatform = {
   totalLikesLabel: string | null;
   avgViews: number | null;
   avgViewsLabel: string | null;
+  avgLikesPerVideo: number | null;
+  avgLikesPerVideoLabel: string | null;
   avgReach: number | null;
   avgReachLabel: string | null;
+  avgEngagement: number | null;
+  avgEngagementLabel: string | null;
   monthlyViews: number | null;
   monthlyViewsLabel: string | null;
 };
@@ -14,6 +18,7 @@ type PreviewPlatform = {
 type PreviewMetrics = {
   totalAudience: number | null;
   totalAudienceLabel: string | null;
+  totalLabel?: string | null;
   platforms: {
     instagram: PreviewPlatform | null;
     tiktok: PreviewPlatform | null;
@@ -28,6 +33,8 @@ const errorEl = document.getElementById('media-kit-gate-error')!;
 const submitBtn = document.getElementById('media-kit-gate-submit') as HTMLButtonElement;
 const previewTotalEl = document.getElementById('media-kit-preview-total')!;
 const previewPlatformsEl = document.getElementById('media-kit-preview-platforms')!;
+
+const previewTotalLabelEl = document.getElementById('media-kit-preview-total-label')!;
 
 const SUBMIT_LABEL = 'View Media Kit';
 
@@ -69,7 +76,9 @@ function platformLine(name: string, platform: PreviewPlatform | null) {
 
   const details = [`${platform.followersLabel} followers`];
   if (platform.avgViewsLabel) details.push(`${platform.avgViewsLabel} avg. views`);
+  if (platform.avgLikesPerVideoLabel) details.push(`${platform.avgLikesPerVideoLabel} avg. likes/video`);
   if (platform.avgReachLabel) details.push(`${platform.avgReachLabel} avg. reach`);
+  if (platform.avgEngagementLabel) details.push(`${platform.avgEngagementLabel} avg. engagement`);
   if (platform.monthlyViewsLabel) details.push(`${platform.monthlyViewsLabel} monthly views`);
   if (platform.totalLikesLabel) details.push(`${platform.totalLikesLabel} total likes`);
 
@@ -88,11 +97,13 @@ async function loadPreviewMetrics() {
     const data = (await response.json()) as PreviewMetrics;
 
     previewTotalEl.textContent = data.totalAudienceLabel || '—';
+    if (data.totalLabel) {
+      previewTotalLabelEl.textContent = data.totalLabel;
+    }
 
     const rows = [
       platformLine('Instagram', data.platforms.instagram),
       platformLine('TikTok', data.platforms.tiktok),
-      platformLine('Facebook', data.platforms.facebook),
     ].filter(Boolean);
 
     previewPlatformsEl.innerHTML =
