@@ -1,0 +1,86 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { site } from '../config/site';
+---
+
+<BaseLayout
+  title="Terms of Service"
+  description={`Terms of service for ${site.name} and jess-oneill.com.`}
+>
+  <section class="page-header">
+    <div class="container">
+      <p class="section__eyebrow">Legal</p>
+      <h1 class="page-header__title">Terms of Service</h1>
+      <p class="page-header__desc">Last updated September 1, 2026</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container legal-content">
+      <p>
+        By using <a href={site.url}>jess-oneill.com</a>, you agree to these Terms of Service. If you do not agree, please
+        do not use the site.
+      </p>
+
+      <h2>Use of the website</h2>
+      <p>
+        This website shares lifestyle content, portfolio information, and a media kit for brand and PR partners. You may
+        browse the public site for personal, non-commercial use. Content, images, and branding remain the property of
+        {site.name} unless otherwise stated.
+      </p>
+
+      <h2>Media kit access</h2>
+      <p>
+        Access to the full media kit may require a valid business email address. Information submitted through the media
+        kit form must be accurate. Misuse of the media kit or submitted materials may result in access being revoked.
+      </p>
+
+      <h2>Third-party platforms</h2>
+      <p>
+        The site may display statistics from third-party platforms such as Instagram, TikTok, and Facebook. Those
+        platforms have their own terms and policies. Links to social profiles are provided for convenience and leave
+        our site.
+      </p>
+
+      <h2>Disclaimer</h2>
+      <p>
+        Content on this site is provided for general information and inspiration. Follower counts and metrics are
+        provided for reference and may change. We do not guarantee uninterrupted access to the site or third-party
+        integrations.
+      </p>
+
+      <h2>Limitation of liability</h2>
+      <p>
+        To the fullest extent permitted by law, {site.name} is not liable for damages arising from your use of this
+        website or reliance on its content.
+      </p>
+
+      <h2>Changes</h2>
+      <p>We may update these terms from time to time. Continued use of the site after changes means you accept the updated terms.</p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions about these terms: <a href={`mailto:${site.email}`}>{site.email}</a>
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .legal-content {
+    max-width: 720px;
+    color: var(--color-text-muted);
+    line-height: 1.75;
+  }
+
+  .legal-content h2 {
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    margin: 2rem 0 0.75rem;
+  }
+
+  .legal-content a {
+    color: var(--color-accent);
+  }
+</style>

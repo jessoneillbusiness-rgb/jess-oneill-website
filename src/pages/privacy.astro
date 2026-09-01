@@ -1,0 +1,100 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { site } from '../config/site';
+---
+
+<BaseLayout
+  title="Privacy Policy"
+  description={`Privacy policy for ${site.name} and jess-oneill.com.`}
+>
+  <section class="page-header">
+    <div class="container">
+      <p class="section__eyebrow">Legal</p>
+      <h1 class="page-header__title">Privacy Policy</h1>
+      <p class="page-header__desc">Last updated September 1, 2026</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container legal-content">
+      <p>
+        This Privacy Policy describes how {site.name} ("we", "us") collects and uses information when you visit
+        <a href={site.url}>jess-oneill.com</a>.
+      </p>
+
+      <h2>Information we collect</h2>
+      <ul>
+        <li>
+          <strong>Website visitors:</strong> Basic analytics and server logs (such as browser type, pages viewed, and
+          approximate location) may be collected by our hosting provider, Cloudflare.
+        </li>
+        <li>
+          <strong>Media kit signups:</strong> If you request access to the media kit, we collect the email address you
+          provide and any optional details you submit (name, brand, newsletter preference).
+        </li>
+        <li>
+          <strong>TikTok connection:</strong> If the site owner connects a TikTok account for media kit statistics, we
+          receive public profile and video metrics authorized through TikTok's API. We do not receive TikTok passwords.
+        </li>
+      </ul>
+
+      <h2>How we use information</h2>
+      <ul>
+        <li>To operate and improve the website</li>
+        <li>To share the media kit with brands and PR contacts who request access</li>
+        <li>To display authorized social media statistics on the media kit page</li>
+        <li>To send occasional updates if you opt in at the media kit signup form</li>
+      </ul>
+
+      <h2>Sharing</h2>
+      <p>
+        We do not sell personal information. We use service providers such as Cloudflare (hosting), Resend (email
+        delivery for outreach), and TikTok (authorized API data) only as needed to operate the site.
+      </p>
+
+      <h2>Data retention</h2>
+      <p>
+        Media kit signups are stored until removed by the site owner. You may request deletion by emailing
+        <a href={`mailto:${site.email}`}>{site.email}</a>.
+      </p>
+
+      <h2>Your choices</h2>
+      <p>
+        You may unsubscribe from optional updates at any time. TikTok account access can be revoked in your TikTok app
+        settings under third-party app permissions.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions about this policy: <a href={`mailto:${site.email}`}>{site.email}</a>
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .legal-content {
+    max-width: 720px;
+    color: var(--color-text-muted);
+    line-height: 1.75;
+  }
+
+  .legal-content h2 {
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    margin: 2rem 0 0.75rem;
+  }
+
+  .legal-content ul {
+    padding-left: 1.25rem;
+  }
+
+  .legal-content li + li {
+    margin-top: 0.5rem;
+  }
+
+  .legal-content a {
+    color: var(--color-accent);
+  }
+</style>
