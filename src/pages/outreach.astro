@@ -39,6 +39,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         <div class="outreach-tabs" role="tablist" aria-label="Outreach sections">
           <button type="button" class="outreach-tab outreach-tab--active" data-tab="contacts">Contacts</button>
+          <button type="button" class="outreach-tab" data-tab="discover">Brand discovery</button>
           <button type="button" class="outreach-tab" data-tab="drafts">Pending drafts</button>
           <button type="button" class="outreach-tab" data-tab="sent">Sent</button>
         </div>
@@ -125,6 +126,55 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <tbody id="contacts-table-body">
                   <tr><td colspan="6" class="outreach-empty">No contacts yet.</td></tr>
                 </tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section id="tab-discover" class="outreach-tab-panel" hidden>
+          <article class="outreach-panel">
+            <h2 class="outreach-panel__heading">Find brands from sponsored Instagram posts</h2>
+            <p class="outreach-panel__hint">
+              Paste US creator handles (one per line). We scan recent posts for paid partnership signals like
+              <code>#ad</code>, <code>#sponsored</code>, and brand tags, then save promising brands as leads.
+              You can add PR emails later before generating drafts.
+            </p>
+            <form id="discover-form" class="outreach-form">
+              <label class="outreach-field">
+                <span>Creator Instagram handles</span>
+                <textarea
+                  id="discover-usernames"
+                  rows="6"
+                  placeholder="creatorone&#10;creatortwo&#10;creatorthree"
+                ></textarea>
+              </label>
+              <div class="outreach-field">
+                <button type="submit" class="btn btn--primary" id="discover-scan">Scan for brand leads</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="outreach-panel outreach-panel--table" id="discover-results-panel" hidden>
+            <div class="outreach-panel__toolbar">
+              <h2 class="outreach-panel__heading">Potential brands</h2>
+              <button type="button" class="btn btn--primary" id="discover-import" disabled>
+                Save selected brands as leads
+              </button>
+            </div>
+            <p id="discover-summary" class="outreach-panel__hint"></p>
+            <div class="outreach-table-wrap">
+              <table class="outreach-table">
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" id="discover-select-all" aria-label="Select all brands" /></th>
+                    <th>Brand</th>
+                    <th>Instagram</th>
+                    <th>Seen with</th>
+                    <th>Example post</th>
+                    <th>Signals</th>
+                  </tr>
+                </thead>
+                <tbody id="discover-results-body"></tbody>
               </table>
             </div>
           </article>

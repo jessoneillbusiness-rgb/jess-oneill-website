@@ -1897,6 +1897,11 @@ p {
   color: var(--color-text-muted);
 }
 
+.outreach-badge--lead {
+  background: #fff4e5;
+  color: #9a6700;
+}
+
 @media (max-width: 768px) {
   .nav-toggle {
     display: block;

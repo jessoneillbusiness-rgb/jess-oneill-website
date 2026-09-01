@@ -2,10 +2,24 @@ import { authError, isAuthenticated, json } from '../../lib/outreach-auth.js';
 import { listContacts, newId, saveContacts } from '../../lib/outreach-store.js';
 
 function normalizeContact(input) {
+  const source = normalizeSource(input.source);
   const email = String(input.email ?? '')
     .trim()
     .toLowerCase();
-  if (!email || !email.includes('@')) {
+  const instagramHandle = String(input.instagramHandle ?? '')
+    .trim()
+    .replace(/^@/, '');
+  const company = String(input.company ?? '').trim();
+  const isLead =
+    input.isLead === true || (source === 'instagram-discovery' && (!email || input.isLead !== false));
+
+  if (!email && !isLead) {
+    throw new Error('A valid email is required');
+  }
+  if (isLead && !company && !instagramHandle) {
+    throw new Error('A brand name or Instagram handle is required');
+  }
+  if (email && !email.includes('@')) {
     throw new Error('A valid email is required');
   }
 
@@ -13,14 +27,30 @@ function normalizeContact(input) {
     id: input.id || newId(),
     name: String(input.name ?? '').trim(),
     email,
-    company: String(input.company ?? '').trim(),
+    company: company || formatCompanyFromHandle(instagramHandle),
     role: String(input.role ?? '').trim(),
     category: String(input.category ?? '').trim(),
     notes: String(input.notes ?? '').trim(),
-    source: input.source === 'import' ? 'import' : 'manual',
+    instagramHandle,
+    isLead: isLead && !email,
+    source,
     createdAt: input.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
+}
+
+function normalizeSource(value) {
+  if (value === 'import') return 'import';
+  if (value === 'media-kit') return 'media-kit';
+  if (value === 'instagram-discovery') return 'instagram-discovery';
+  return 'manual';
+}
+
+function formatCompanyFromHandle(handle) {
+  if (!handle) return '';
+  return handle
+    .replace(/[._]+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 export async function onRequestGet(context) {
@@ -55,8 +85,20 @@ export async function onRequestPost(context) {
     }
 
     const contact = normalizeContact(body);
-    if (contacts.some((item) => item.email === contact.email)) {
-      return json({ error: 'A contact with this email already exists' }, 409);
+    if (
+      contacts.some((item) => {
+        if (contact.email && item.email === contact.email) return true;
+        if (
+          contact.instagramHandle &&
+          item.instagramHandle &&
+          item.instagramHandle.toLowerCase() === contact.instagramHandle.toLowerCase()
+        ) {
+          return true;
+        }
+        return false;
+      })
+    ) {
+      return json({ error: 'A matching contact or brand lead already exists' }, 409);
     }
 
     contacts.push(contact);

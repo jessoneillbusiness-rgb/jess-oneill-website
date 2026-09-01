@@ -6,6 +6,33 @@ type Contact = {
   role?: string;
   category?: string;
   notes?: string;
+  instagramHandle?: string;
+  isLead?: boolean;
+  source?: string;
+};
+
+type BrandCreatorRef = {
+  username: string;
+  postUrl: string;
+  captionSnippet: string;
+  signals: string[];
+};
+
+type BrandLead = {
+  brandUsername: string;
+  brandName: string;
+  brandUrl: string;
+  instagramHandle: string;
+  creators: BrandCreatorRef[];
+  postCount: number;
+  isUnknown?: boolean;
+};
+
+type DiscoveryResult = {
+  brands: BrandLead[];
+  creators: Array<{ username: string; ok: boolean; error?: string; brandsFound?: number }>;
+  scannedCount: number;
+  brandCount: number;
 };
 
 type Draft = {
@@ -33,6 +60,14 @@ const draftsList = document.getElementById('drafts-list')!;
 const sentList = document.getElementById('sent-list')!;
 const generateBtn = document.getElementById('generate-drafts') as HTMLButtonElement;
 const selectAll = document.getElementById('select-all-contacts') as HTMLInputElement;
+const discoverForm = document.getElementById('discover-form') as HTMLFormElement;
+const discoverUsernames = document.getElementById('discover-usernames') as HTMLTextAreaElement;
+const discoverScanBtn = document.getElementById('discover-scan') as HTMLButtonElement;
+const discoverResultsPanel = document.getElementById('discover-results-panel')!;
+const discoverResultsBody = document.getElementById('discover-results-body')!;
+const discoverSummary = document.getElementById('discover-summary')!;
+const discoverImportBtn = document.getElementById('discover-import') as HTMLButtonElement;
+const discoverSelectAll = document.getElementById('discover-select-all') as HTMLInputElement;
 
 const TEST_CONTACT = {
   name: 'Matthew Roberts',
@@ -62,6 +97,8 @@ let contacts: Contact[] = [];
 let drafts: Draft[] = [];
 let resendEnabled = false;
 const selectedContactIds = new Set<string>();
+let discoveryBrands: BrandLead[] = [];
+const selectedBrandKeys = new Set<string>();
 
 async function api<T>(url: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(url, {
@@ -179,6 +216,10 @@ async function ensureTestDraft() {
   }
 }
 
+function isDraftReadyContact(contact: Contact) {
+  return Boolean(contact.email) && !contact.isLead;
+}
+
 function renderContacts() {
   if (contacts.length === 0) {
     contactsBody.innerHTML = '<tr><td colspan="6" class="outreach-empty">No contacts yet.</td></tr>';
@@ -187,18 +228,26 @@ function renderContacts() {
   }
 
   contactsBody.innerHTML = contacts
-    .map(
-      (contact) => `
+    .map((contact) => {
+      const canDraft = isDraftReadyContact(contact);
+      return `
       <tr>
-        <td><input type="checkbox" data-contact-id="${contact.id}" ${selectedContactIds.has(contact.id) ? 'checked' : ''} /></td>
-        <td>${escapeHtml(contact.name)}</td>
-        <td>${escapeHtml(contact.email)}</td>
-        <td>${escapeHtml(contact.company)}</td>
+        <td>
+          <input
+            type="checkbox"
+            data-contact-id="${contact.id}"
+            ${!canDraft ? 'disabled title="Add a PR email before generating drafts"' : ''}
+            ${selectedContactIds.has(contact.id) ? 'checked' : ''}
+          />
+        </td>
+        <td>${escapeHtml(contact.name || (contact.isLead ? 'Brand lead' : '—'))}</td>
+        <td>${contact.email ? escapeHtml(contact.email) : '<span class="outreach-badge outreach-badge--lead">Add email</span>'}</td>
+        <td>${escapeHtml(contact.company)}${contact.isLead ? ' <span class="outreach-badge outreach-badge--lead">Lead</span>' : ''}</td>
         <td>${escapeHtml(contact.category || '—')}</td>
         <td><button type="button" class="outreach-link-btn" data-delete-contact="${contact.id}">Delete</button></td>
       </tr>
-    `,
-    )
+    `;
+    })
     .join('');
 
   generateBtn.disabled = selectedContactIds.size === 0;
@@ -206,11 +255,14 @@ function renderContacts() {
   contactsBody.querySelectorAll('input[type="checkbox"]').forEach((input) => {
     input.addEventListener('change', (event) => {
       const target = event.target as HTMLInputElement;
+      if (target.disabled) return;
       const id = target.dataset.contactId!;
       if (target.checked) selectedContactIds.add(id);
       else selectedContactIds.delete(id);
       generateBtn.disabled = selectedContactIds.size === 0;
-      selectAll.checked = selectedContactIds.size === contacts.length;
+      const draftableCount = contacts.filter(isDraftReadyContact).length;
+      selectAll.checked =
+        draftableCount > 0 && selectedContactIds.size === draftableCount;
     });
   });
 
@@ -524,8 +576,137 @@ document.querySelectorAll('.outreach-tab').forEach((tab) => {
 
 selectAll.addEventListener('change', () => {
   selectedContactIds.clear();
-  if (selectAll.checked) contacts.forEach((contact) => selectedContactIds.add(contact.id));
+  if (selectAll.checked) {
+    contacts.filter(isDraftReadyContact).forEach((contact) => selectedContactIds.add(contact.id));
+  }
   renderContacts();
+});
+
+function brandKey(brand: BrandLead) {
+  return brand.brandUsername || brand.creators[0]?.postUrl || brand.brandName;
+}
+
+function renderDiscoveryResults(result: DiscoveryResult) {
+  discoveryBrands = result.brands;
+  selectedBrandKeys.clear();
+  discoverSelectAll.checked = false;
+  discoverImportBtn.disabled = true;
+
+  const creatorSummary = result.creators
+    .map((creator) =>
+      creator.ok
+        ? `@${creator.username} (${creator.brandsFound ?? 0} brands)`
+        : `@${creator.username} (failed)`,
+    )
+    .join(' · ');
+
+  discoverSummary.textContent = `Scanned ${result.scannedCount} creator(s). Found ${result.brandCount} potential brand(s). ${creatorSummary}`;
+  discoverResultsPanel.hidden = false;
+
+  if (discoveryBrands.length === 0) {
+    discoverResultsBody.innerHTML =
+      '<tr><td colspan="6" class="outreach-empty">No sponsored brand posts found. Try different creators.</td></tr>';
+    return;
+  }
+
+  discoverResultsBody.innerHTML = discoveryBrands
+    .map((brand) => {
+      const key = brandKey(brand);
+      const creator = brand.creators[0];
+      const seenWith = [...new Set(brand.creators.map((item) => `@${item.username}`))].join(', ');
+      const signals = [...new Set(brand.creators.flatMap((item) => item.signals))].join(', ');
+      const instagramCell = brand.instagramHandle
+        ? `<a href="${escapeAttr(brand.brandUrl)}" target="_blank" rel="noopener noreferrer">@${escapeHtml(brand.instagramHandle)}</a>`
+        : '—';
+      const postCell = creator
+        ? `<a href="${escapeAttr(creator.postUrl)}" target="_blank" rel="noopener noreferrer">View post</a>`
+        : '—';
+
+      return `
+        <tr>
+          <td><input type="checkbox" data-brand-key="${escapeAttr(key)}" ${brand.isUnknown ? 'disabled' : ''} /></td>
+          <td>${escapeHtml(brand.brandName)}</td>
+          <td>${instagramCell}</td>
+          <td>${escapeHtml(seenWith)}</td>
+          <td>${postCell}</td>
+          <td>${escapeHtml(signals || '—')}</td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  discoverResultsBody.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+    input.addEventListener('change', (event) => {
+      const target = event.target as HTMLInputElement;
+      const key = target.dataset.brandKey!;
+      if (target.checked) selectedBrandKeys.add(key);
+      else selectedBrandKeys.delete(key);
+      discoverImportBtn.disabled = selectedBrandKeys.size === 0;
+      const selectable = discoveryBrands.filter((brand) => !brand.isUnknown).length;
+      discoverSelectAll.checked = selectable > 0 && selectedBrandKeys.size === selectable;
+    });
+  });
+}
+
+discoverForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const usernames = discoverUsernames.value.trim();
+  if (!usernames) {
+    showAlert('Add at least one creator handle.', 'error');
+    return;
+  }
+
+  discoverScanBtn.disabled = true;
+  discoverScanBtn.textContent = 'Scanning…';
+
+  try {
+    const result = await api<DiscoveryResult>('/api/outreach/discover', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'scan', usernames }),
+    });
+    renderDiscoveryResults(result);
+    showAlert(`Scan complete. Found ${result.brandCount} potential brand(s).`);
+  } catch (error) {
+    showAlert(error instanceof Error ? error.message : 'Scan failed', 'error');
+  } finally {
+    discoverScanBtn.disabled = false;
+    discoverScanBtn.textContent = 'Scan for brand leads';
+  }
+});
+
+discoverSelectAll.addEventListener('change', () => {
+  selectedBrandKeys.clear();
+  if (discoverSelectAll.checked) {
+    discoveryBrands
+      .filter((brand) => !brand.isUnknown)
+      .forEach((brand) => selectedBrandKeys.add(brandKey(brand)));
+  }
+  discoverResultsBody.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+    const target = input as HTMLInputElement;
+    if (target.disabled) return;
+    target.checked = discoverSelectAll.checked;
+  });
+  discoverImportBtn.disabled = selectedBrandKeys.size === 0;
+});
+
+discoverImportBtn.addEventListener('click', async () => {
+  const brands = discoveryBrands.filter((brand) => selectedBrandKeys.has(brandKey(brand)));
+  if (!brands.length) return;
+
+  try {
+    const result = await api<{ imported: number }>('/api/outreach/discover', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'import', brands }),
+    });
+    selectedBrandKeys.clear();
+    discoverSelectAll.checked = false;
+    discoverImportBtn.disabled = true;
+    await loadData();
+    showAlert(`Saved ${result.imported} brand lead(s) to Contacts. Add PR emails when you find them.`);
+    activateTab('contacts');
+  } catch (error) {
+    showAlert(error instanceof Error ? error.message : 'Import failed', 'error');
+  }
 });
 
 generateBtn.addEventListener('click', async () => {

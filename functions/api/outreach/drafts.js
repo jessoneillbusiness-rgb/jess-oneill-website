@@ -38,7 +38,7 @@ export async function onRequestPost(context) {
 
       for (const contactId of contactIds) {
         const contact = contacts.find((item) => item.id === contactId);
-        if (!contact) continue;
+        if (!contact || contact.isLead || !contact.email) continue;
 
         const existingPendingIndex = drafts.findIndex(
           (item) => item.contactId === contactId && item.status === 'pending',
