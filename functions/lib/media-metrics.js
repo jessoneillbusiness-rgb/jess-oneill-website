@@ -51,7 +51,7 @@ async function fetchFacebook(env) {
 }
 
 export async function getMediaMetrics(env = {}, options = {}) {
-  const timeoutMs = options.timeoutMs ?? 8000;
+  const timeoutMs = options.timeoutMs ?? 12000;
   const includeFacebookInTotal = options.includeFacebookInTotal ?? false;
   const fetchTimeout = Math.min(timeoutMs - 1000, 5000);
 
@@ -66,7 +66,7 @@ export async function getMediaMetrics(env = {}, options = {}) {
       ? computeInstagramInsights(instagramProfile, env)
       : computeInstagramInsights(null, env);
     const tiktokInsights = tiktokProfile
-      ? computeTikTokInsights(tiktokProfile, env)
+      ? computeTikTokInsights(tiktokProfile, env, tiktokProfile.recentVideos ?? [])
       : computeTikTokInsights(null, env);
 
     const instagramFollowers = instagramProfile?.followers ?? null;
@@ -78,14 +78,17 @@ export async function getMediaMetrics(env = {}, options = {}) {
       ? automatedAudience + (facebookFollowers ?? 0)
       : automatedAudience;
 
+    const { recentVideos: _recentVideos, source: _ttSource, ...tiktokPublic } = tiktokProfile ?? {};
+    const { timeline: _igTimeline, ...instagramPublic } = instagramProfile ?? {};
+
     return {
       updatedAt: new Date().toISOString(),
       platforms: {
         instagram: instagramProfile
-          ? { ...instagramProfile, timeline: undefined, insights: instagramInsights }
+          ? { ...instagramPublic, insights: instagramInsights }
           : { insights: instagramInsights },
         tiktok: tiktokProfile
-          ? { ...tiktokProfile, insights: tiktokInsights }
+          ? { ...tiktokPublic, insights: tiktokInsights }
           : { insights: tiktokInsights },
         facebook: facebook
           ? {

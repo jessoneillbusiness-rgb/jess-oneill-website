@@ -176,16 +176,56 @@ function parseTikTokHtml(html) {
   };
 }
 
-export function computeTikTokInsights(profile, env = {}) {
+export function computeTikTokInsights(profile, env = {}, videos = []) {
   const followers = profile?.followers;
+
+  if (videos.length > 0) {
+    const viewCounts = videos.map((video) => video.view_count).filter((value) => value != null);
+    const likeCounts = videos.map((video) => video.like_count).filter((value) => value != null);
+    const engagementRates = [];
+    const nowSec = Date.now() / 1000;
+    const thirtyDaysAgo = nowSec - 30 * 86400;
+    let monthlyViews = 0;
+
+    for (const video of videos) {
+      const createTime = Number(video.create_time ?? 0);
+      const views = Number(video.view_count ?? 0);
+      const likes = Number(video.like_count ?? 0);
+      const comments = Number(video.comment_count ?? 0);
+      const shares = Number(video.share_count ?? 0);
+
+      if (createTime >= thirtyDaysAgo) {
+        monthlyViews += views;
+      }
+
+      if (followers && followers > 0) {
+        engagementRates.push(((likes + comments + shares) / followers) * 100);
+      }
+    }
+
+    const computed = {
+      avgViews: round(average(viewCounts)),
+      avgLikesPerVideo: round(average(likeCounts)),
+      avgEngagement: round(average(engagementRates), 1),
+      monthlyViews: monthlyViews > 0 ? monthlyViews : null,
+    };
+
+    return {
+      avgViews: pickInsight(env, 'TIKTOK_AVG_VIEWS', computed.avgViews),
+      avgLikesPerVideo: pickInsight(env, 'TIKTOK_AVG_LIKES_PER_VIDEO', computed.avgLikesPerVideo),
+      avgEngagement: pickInsight(env, 'TIKTOK_AVG_ENGAGEMENT_RATE', computed.avgEngagement),
+      monthlyViews: pickInsight(env, 'TIKTOK_MONTHLY_VIEWS', computed.monthlyViews),
+    };
+  }
+
   const totalLikes = profile?.totalLikes;
-  const videos = profile?.videos;
+  const videosCount = profile?.videos;
 
   let avgLikesPerVideo = null;
   let avgEngagement = null;
 
-  if (totalLikes != null && videos != null && videos > 0) {
-    avgLikesPerVideo = round(totalLikes / videos);
+  if (totalLikes != null && videosCount != null && videosCount > 0) {
+    avgLikesPerVideo = round(totalLikes / videosCount);
   }
 
   if (avgLikesPerVideo != null && followers != null && followers > 0) {
@@ -338,11 +378,65 @@ export async function fetchInstagramProfile(env = {}, options = {}) {
   return null;
 }
 
+import {
+  fetchTikTokRecentVideos,
+  fetchTikTokUserInfo,
+  getTikTokTokens,
+  resolveTikTokAccessToken,
+} from './tiktok-api.js';
+
+async function fetchTikTokProfileFromApi(env, timeoutMs) {
+  const tokens = await getTikTokTokens(env);
+  if (!tokens?.refresh_token && !tokens?.access_token) return null;
+  if (!env.TIKTOK_CLIENT_KEY || !env.TIKTOK_CLIENT_SECRET) return null;
+
+  try {
+    const accessToken = await resolveTikTokAccessToken(env);
+    if (!accessToken) return null;
+
+    const [user, recentVideos] = await Promise.all([
+      withTimeout(fetchTikTokUserInfo(accessToken), timeoutMs, 'TikTok user info'),
+      withTimeout(
+        fetchTikTokRecentVideos(accessToken, { maxVideos: 60 }),
+        timeoutMs,
+        'TikTok video list',
+      ),
+    ]);
+
+    if (!user) return null;
+
+    return {
+      followers: user.follower_count ?? null,
+      following: user.following_count ?? null,
+      totalLikes: user.likes_count ?? null,
+      videos: user.video_count ?? null,
+      username: user.username ?? TIKTOK_USERNAME,
+      recentVideos,
+      source: 'api',
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchTikTokProfile(env = {}, options = {}) {
   const timeoutMs = options.timeoutMs ?? 3500;
   const manualFollowers = envNumber(env, 'TIKTOK_FOLLOWER_COUNT');
   const manualLikes = envNumber(env, 'TIKTOK_TOTAL_LIKES');
   const manualVideos = envNumber(env, 'TIKTOK_VIDEO_COUNT');
+
+  const apiProfile = await fetchTikTokProfileFromApi(env, Math.max(timeoutMs, 6000));
+  if (apiProfile) {
+    return {
+      followers: apiProfile.followers ?? manualFollowers,
+      following: apiProfile.following ?? null,
+      totalLikes: apiProfile.totalLikes ?? manualLikes,
+      videos: apiProfile.videos ?? manualVideos,
+      username: apiProfile.username ?? TIKTOK_USERNAME,
+      recentVideos: apiProfile.recentVideos ?? [],
+      source: 'api',
+    };
+  }
 
   try {
     const response = await withTimeout(
@@ -367,6 +461,8 @@ export async function fetchTikTokProfile(env = {}, options = {}) {
       totalLikes: parsed.totalLikes ?? manualLikes,
       videos: parsed.videos ?? manualVideos,
       username: parsed.username ?? TIKTOK_USERNAME,
+      recentVideos: [],
+      source: 'scrape',
     };
   } catch {
     if (manualFollowers != null) {
@@ -375,6 +471,8 @@ export async function fetchTikTokProfile(env = {}, options = {}) {
         totalLikes: manualLikes,
         videos: manualVideos,
         username: TIKTOK_USERNAME,
+        recentVideos: [],
+        source: 'manual',
       };
     }
     return null;
