@@ -4,13 +4,19 @@
  */
 
 import {
+  INSTAGRAM_USERNAME,
+  fetchInstagramViaGraph,
+  fetchInstagramWebProfile,
+} from './instagram-api.js';
+import { resolveInstagramFollowers } from './social-config.js';
+import {
   fetchTikTokRecentVideos,
   fetchTikTokUserInfo,
   resolveTikTokAccessToken,
 } from './tiktok-api.js';
 import { getTikTokTokens } from './tiktok-token-store.js';
 
-export const INSTAGRAM_USERNAME = 'jess.oneill';
+export { INSTAGRAM_USERNAME };
 export const TIKTOK_USERNAME = 'imjesschillin';
 
 const BROWSER_HEADERS = {
@@ -51,88 +57,6 @@ function pickInsight(env, envKey, computed) {
   const fromEnv = envNumber(env, envKey);
   if (fromEnv !== null) return fromEnv;
   return computed ?? null;
-}
-
-function parseInstagramHtml(html) {
-  const patterns = [
-    /"edge_followed_by":\{"count":(\d+)\}/,
-    /"follower_count":(\d+)/,
-    /"edge_followed_by":\s*\{\s*"count"\s*:\s*(\d+)/,
-  ];
-
-  for (const pattern of patterns) {
-    const match = html.match(pattern);
-    if (match) {
-      return {
-        followers: Number.parseInt(match[1], 10),
-        username: INSTAGRAM_USERNAME,
-      };
-    }
-  }
-
-  return null;
-}
-
-function parseInstagramTimelineFromHtml(html) {
-  const marker = '"edge_owner_to_timeline_media":';
-  const start = html.indexOf(marker);
-  if (start === -1) return [];
-
-  const edgesMarker = '"edges":[';
-  const edgesStart = html.indexOf(edgesMarker, start);
-  if (edgesStart === -1) return [];
-
-  const arrayStart = edgesStart + edgesMarker.length - 1;
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-
-  for (let index = arrayStart; index < html.length; index += 1) {
-    const char = html[index];
-
-    if (inString) {
-      if (escaped) {
-        escaped = false;
-      } else if (char === '\\') {
-        escaped = true;
-      } else if (char === '"') {
-        inString = false;
-      }
-      continue;
-    }
-
-    if (char === '"') {
-      inString = true;
-      continue;
-    }
-
-    if (char === '[') depth += 1;
-    if (char === ']') {
-      depth -= 1;
-      if (depth === 0) {
-        try {
-          const edges = JSON.parse(html.slice(arrayStart, index + 1));
-          return Array.isArray(edges) ? edges : [];
-        } catch {
-          return [];
-        }
-      }
-    }
-  }
-
-  return [];
-}
-
-function mapInstagramUser(user) {
-  if (!user) return null;
-
-  return {
-    followers: user.edge_followed_by?.count ?? null,
-    following: user.edge_follow?.count ?? null,
-    posts: user.edge_owner_to_timeline_media?.count ?? null,
-    username: user.username ?? INSTAGRAM_USERNAME,
-    timeline: user.edge_owner_to_timeline_media?.edges ?? [],
-  };
 }
 
 /** Map recent Instagram timeline edges to homepage feed items. */
@@ -333,137 +257,38 @@ export function computeTikTokInsights(profile, env = {}, videos = []) {
   };
 }
 
-const FACEBOOK_PAGE_ID = '61575124581812';
-
-async function fetchInstagramViaGraph(env) {
-  const token = env?.FACEBOOK_ACCESS_TOKEN;
-  const pageId = env?.FACEBOOK_PAGE_ID || FACEBOOK_PAGE_ID;
-  const instagramUserId = env?.INSTAGRAM_USER_ID;
-  if (!token) return null;
-
-  if (instagramUserId) {
-    const response = await fetch(
-      `https://graph.facebook.com/v21.0/${instagramUserId}?fields=followers_count&access_token=${token}`,
-    );
-    if (response.ok) {
-      const data = await response.json();
-      if (data.followers_count != null) return data.followers_count;
-    }
-  }
-
-  if (pageId) {
-    const pageResponse = await fetch(
-      `https://graph.facebook.com/v21.0/${pageId}?fields=instagram_business_account&access_token=${token}`,
-    );
-    if (pageResponse.ok) {
-      const pageData = await pageResponse.json();
-      const igId = pageData.instagram_business_account?.id;
-      if (igId) {
-        const igResponse = await fetch(
-          `https://graph.facebook.com/v21.0/${igId}?fields=followers_count&access_token=${token}`,
-        );
-        if (igResponse.ok) {
-          const igData = await igResponse.json();
-          return igData.followers_count ?? null;
-        }
-      }
-    }
-  }
-
-  return null;
-}
-
-async function fetchInstagramFollowerFallback(env, timeoutMs) {
-  const graphFollowers = await fetchInstagramViaGraph(env);
-  if (graphFollowers != null) {
-    return {
-      followers: graphFollowers,
-      username: INSTAGRAM_USERNAME,
-      timeline: [],
-    };
-  }
-
-  try {
-    const response = await withTimeout(
-      fetch(`https://www.instagram.com/${INSTAGRAM_USERNAME}/`, {
-        headers: {
-          ...BROWSER_HEADERS,
-          Accept: 'text/html,application/xhtml+xml',
-          Referer: 'https://www.instagram.com/',
-        },
-      }),
-      timeoutMs,
-      'Instagram HTML fallback',
-    );
-
-    if (response.ok) {
-      const html = await response.text();
-      const fallback = parseInstagramHtml(html);
-      const timeline = parseInstagramTimelineFromHtml(html);
-      if (fallback || timeline.length) {
-        return {
-          followers: fallback?.followers ?? null,
-          username: INSTAGRAM_USERNAME,
-          timeline,
-        };
-      }
-    }
-  } catch {
-    // fall through
-  }
-
-  return null;
-}
-
 export async function fetchInstagramProfile(env = {}, options = {}) {
   const timeoutMs = options.timeoutMs ?? 3500;
-  const manualFollowers = envNumber(env, 'INSTAGRAM_FOLLOWER_COUNT');
+  const manualFollowers = envNumber(env, 'INSTAGRAM_FOLLOWER_COUNT') ?? resolveInstagramFollowers(env);
   const manualPosts = envNumber(env, 'INSTAGRAM_POST_COUNT');
 
-  const urls = [
-    `https://i.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(INSTAGRAM_USERNAME)}`,
-    `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(INSTAGRAM_USERNAME)}`,
-  ];
-
-  const headers = {
-    ...BROWSER_HEADERS,
-    'X-IG-App-ID': '936619743392459',
-    Referer: `https://www.instagram.com/${INSTAGRAM_USERNAME}/`,
-    Origin: 'https://www.instagram.com',
-  };
-
-  for (const url of urls) {
-    try {
-      const response = await withTimeout(
-        fetch(url, { headers }),
-        timeoutMs,
-        'Instagram profile',
-      );
-      if (!response.ok) continue;
-
-      const data = await response.json();
-      const profile = mapInstagramUser(data?.data?.user);
-      if (!profile) continue;
-
+  try {
+    const profile = await fetchInstagramWebProfile(INSTAGRAM_USERNAME, { env, timeoutMs });
+    if (profile) {
       if (profile.followers == null && manualFollowers != null) {
         profile.followers = manualFollowers;
       }
       if (profile.posts == null && manualPosts != null) {
         profile.posts = manualPosts;
       }
-
       return profile;
-    } catch {
-      // try next endpoint
     }
+  } catch {
+    // try Graph / configured fallback
   }
 
-  const followerFallback = await fetchInstagramFollowerFallback(env, timeoutMs);
-  if (followerFallback) {
-    return {
-      ...followerFallback,
-      posts: manualPosts,
-    };
+  try {
+    const graphFollowers = await fetchInstagramViaGraph(env);
+    if (graphFollowers != null) {
+      return {
+        followers: graphFollowers,
+        posts: manualPosts,
+        username: INSTAGRAM_USERNAME,
+        timeline: [],
+      };
+    }
+  } catch {
+    // use configured fallback
   }
 
   if (manualFollowers != null) {

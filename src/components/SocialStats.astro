@@ -80,7 +80,7 @@ const channelLinks = Object.fromEntries(
 
   async function loadStats() {
     try {
-      const response = await fetch('/api/social-stats?v=2');
+      const response = await fetch('/api/social-stats?v=3');
       if (!response.ok) throw new Error('Failed to fetch stats');
 
       const data = await response.json();
