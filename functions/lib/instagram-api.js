@@ -249,11 +249,20 @@ async function fetchInstagramViaGraphql(username, env, timeoutMs, debug) {
 
   if (debug) debug.graphqlError = lastError;
 
-  try {
-    const proxied = await fetchInstagramViaJina(username, query, timeoutMs, debug);
-    if (proxied?.followers != null) return proxied;
-  } catch (error) {
-    if (debug) debug.jinaError = error instanceof Error ? error.message : String(error);
+  const graphqlUrl = `https://www.instagram.com/graphql/query?${query}`;
+  const proxies = [
+    ['translate', `https://translate.google.com/translate?hl=en&sl=auto&tl=en&u=${encodeURIComponent(graphqlUrl)}`],
+    ['heroku-md', `https://urltomarkdown.herokuapp.com/?url=${encodeURIComponent(graphqlUrl)}`],
+    ['jina', `https://r.jina.ai/${graphqlUrl}`],
+  ];
+
+  for (const [name, proxyUrl] of proxies) {
+    try {
+      const proxied = await fetchInstagramViaProxy(username, proxyUrl, name, timeoutMs, debug);
+      if (proxied?.followers != null) return proxied;
+    } catch (error) {
+      if (debug) debug[`${name}Error`] = error instanceof Error ? error.message : String(error);
+    }
   }
 
   return null;
@@ -272,30 +281,37 @@ function instagramGraphqlQuery(userId) {
   return `doc_id=${INSTAGRAM_PROFILE_DOC_ID}&variables=${encodeURIComponent(JSON.stringify(variables))}&server_timestamps=true`;
 }
 
-async function fetchInstagramViaJina(username, query, timeoutMs, debug) {
-  const target = `https://www.instagram.com/graphql/query?${query}`;
+function extractFollowerCount(text) {
+  const match = String(text ?? '').match(/follower(?:\\)?_count"\s*:\s*(\d+)/);
+  if (!match) return null;
+  return Number.parseInt(match[1], 10);
+}
+
+async function fetchInstagramViaProxy(username, proxyUrl, name, timeoutMs, debug) {
   const response = await withTimeout(
-    fetch(`https://r.jina.ai/${target}`, {
+    fetch(proxyUrl, {
       headers: {
-        Accept: 'text/plain',
-        'User-Agent': DESKTOP_HEADERS['User-Agent'],
+        ...DESKTOP_HEADERS,
+        Accept: 'text/html,application/json,text/plain,*/*',
       },
     }),
     timeoutMs,
-    'Instagram Jina proxy',
+    `Instagram ${name} proxy`,
   );
 
-  if (debug) debug.jinaStatus = response.status;
+  if (debug) debug[`${name}Status`] = response.status;
   if (!response.ok) return null;
 
   const text = await response.text();
-  const jsonStart = text.indexOf('{"data"');
-  if (jsonStart === -1) return null;
+  const followers = extractFollowerCount(text);
+  if (followers == null) return null;
 
-  const data = JSON.parse(text.slice(jsonStart));
-  const profile = mapInstagramUser(data?.data?.user, username);
-  if (profile?.followers != null && debug) debug.source = 'jina-graphql';
-  return profile;
+  if (debug) debug.source = `${name}-proxy`;
+  return {
+    followers,
+    username,
+    timeline: [],
+  };
 }
 
 async function fetchJsonProfile(url, headers, timeoutMs, label) {
