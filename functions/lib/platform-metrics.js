@@ -258,7 +258,7 @@ export function computeTikTokInsights(profile, env = {}, videos = []) {
 }
 
 export async function fetchInstagramProfile(env = {}, options = {}) {
-  const timeoutMs = options.timeoutMs ?? 3500;
+  const timeoutMs = options.timeoutMs ?? 6000;
   const manualFollowers = envNumber(env, 'INSTAGRAM_FOLLOWER_COUNT') ?? resolveInstagramFollowers(env);
   const manualPosts = envNumber(env, 'INSTAGRAM_POST_COUNT');
 

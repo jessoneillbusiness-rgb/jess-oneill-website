@@ -1,13 +1,23 @@
 /**
- * Instagram public profile fetch via the mobile web API, HTML scrape, and Graph API.
+ * Instagram public profile fetch via GraphQL, mobile web API, HTML scrape, and Graph API.
  */
 
 import { resolveInstagramFollowers } from './social-config.js';
 
 export const INSTAGRAM_USERNAME = 'jess.oneill';
+export const INSTAGRAM_USER_ID = '40011571';
 export const INSTAGRAM_APP_ID = '936619743392459';
 
+/** PolarisProfilePageContentQuery — current Instagram web GraphQL profile doc. */
+const INSTAGRAM_PROFILE_DOC_ID = '27937681195819736';
+
 const FACEBOOK_PAGE_ID = '61575124581812';
+
+const DESKTOP_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Accept-Language': 'en-US,en;q=0.9',
+};
 
 const MOBILE_HEADERS = {
   'User-Agent':
@@ -36,6 +46,14 @@ function withTimeout(promise, timeoutMs, label) {
   ]);
 }
 
+function headerCookies(headers) {
+  if (typeof headers.getSetCookie === 'function') {
+    return headers.getSetCookie();
+  }
+  const raw = headers.get('set-cookie');
+  return raw ? [raw] : [];
+}
+
 export function parseCompactCount(value) {
   const match = String(value ?? '')
     .trim()
@@ -52,8 +70,11 @@ export function parseCompactCount(value) {
 export function mapInstagramUser(user, fallbackUsername = INSTAGRAM_USERNAME) {
   if (!user) return null;
 
+  const followers = user.edge_followed_by?.count ?? user.follower_count ?? null;
+  if (followers == null && !user.username && !user.pk && !user.id) return null;
+
   return {
-    followers: user.edge_followed_by?.count ?? user.follower_count ?? null,
+    followers,
     following: user.edge_follow?.count ?? user.following_count ?? null,
     posts: user.edge_owner_to_timeline_media?.count ?? user.media_count ?? null,
     username: user.username ?? fallbackUsername,
@@ -153,7 +174,7 @@ export function parseInstagramTimelineFromHtml(html) {
 export async function fetchInstagramViaGraph(env = {}) {
   const token = env?.FACEBOOK_ACCESS_TOKEN;
   const pageId = env?.FACEBOOK_PAGE_ID || FACEBOOK_PAGE_ID;
-  const instagramUserId = env?.INSTAGRAM_USER_ID;
+  const instagramUserId = env?.INSTAGRAM_USER_ID || INSTAGRAM_USER_ID;
   if (!token) return null;
 
   if (instagramUserId) {
@@ -188,6 +209,71 @@ export async function fetchInstagramViaGraph(env = {}) {
   return null;
 }
 
+async function fetchInstagramSession(timeoutMs) {
+  const response = await withTimeout(
+    fetch('https://www.instagram.com/', {
+      headers: {
+        ...DESKTOP_HEADERS,
+        Accept: 'text/html,application/xhtml+xml',
+      },
+    }),
+    timeoutMs,
+    'Instagram session',
+  );
+
+  const html = await response.text();
+  const cookie = headerCookies(response.headers)
+    .map((value) => String(value).split(';')[0])
+    .filter(Boolean)
+    .join('; ');
+  const csrf =
+    (html.match(/"csrf_token":"([^"]+)"/) || [])[1] ||
+    (cookie.match(/csrftoken=([^;]+)/) || [])[1] ||
+    '';
+
+  return { cookie, csrf };
+}
+
+async function fetchInstagramViaGraphql(username, env, timeoutMs) {
+  const userId = env?.INSTAGRAM_USER_ID || INSTAGRAM_USER_ID;
+  if (!userId) return null;
+
+  const session = await fetchInstagramSession(timeoutMs);
+  const variables = {
+    id: String(userId),
+    render_surface: 'PROFILE',
+    __relay_internal__pv__PolarisCannesGuardianExperienceEnabledrelayprovider: true,
+    __relay_internal__pv__PolarisCASB976ProfileEnabledrelayprovider: false,
+    __relay_internal__pv__PolarisRepostsConsumptionEnabledrelayprovider: false,
+    __relay_internal__pv__PolarisWebSchoolsEnabledrelayprovider: false,
+    enable_integrity_filters: true,
+  };
+
+  const url = `https://www.instagram.com/graphql/query?doc_id=${INSTAGRAM_PROFILE_DOC_ID}&variables=${encodeURIComponent(JSON.stringify(variables))}&server_timestamps=true`;
+  const response = await withTimeout(
+    fetch(url, {
+      headers: {
+        ...DESKTOP_HEADERS,
+        'X-IG-App-ID': INSTAGRAM_APP_ID,
+        'X-CSRFToken': session.csrf,
+        Accept: '*/*',
+        Origin: 'https://www.instagram.com',
+        Referer: `https://www.instagram.com/${username}/`,
+        Cookie: session.cookie,
+        'Sec-Fetch-Site': 'same-origin',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Dest': 'empty',
+      },
+    }),
+    timeoutMs,
+    'Instagram GraphQL profile',
+  );
+
+  if (!response.ok) return null;
+  const data = await response.json();
+  return mapInstagramUser(data?.data?.user, username);
+}
+
 async function fetchJsonProfile(url, headers, timeoutMs, label) {
   const response = await withTimeout(fetch(url, { headers }), timeoutMs, label);
   if (!response.ok) return null;
@@ -196,8 +282,15 @@ async function fetchJsonProfile(url, headers, timeoutMs, label) {
 }
 
 export async function fetchInstagramWebProfile(username = INSTAGRAM_USERNAME, options = {}) {
-  const timeoutMs = options.timeoutMs ?? 3500;
+  const timeoutMs = options.timeoutMs ?? 6000;
   const env = options.env ?? {};
+
+  try {
+    const graphqlProfile = await fetchInstagramViaGraphql(username, env, timeoutMs);
+    if (graphqlProfile?.followers != null) return graphqlProfile;
+  } catch {
+    // try mobile / HTML endpoints
+  }
 
   const igHeaders = {
     ...MOBILE_HEADERS,
@@ -213,24 +306,9 @@ export async function fetchInstagramWebProfile(username = INSTAGRAM_USERNAME, op
   for (const url of apiUrls) {
     try {
       const profile = await fetchJsonProfile(url, igHeaders, timeoutMs, 'Instagram mobile profile');
-      if (profile) return profile;
+      if (profile?.followers != null) return profile;
     } catch {
       // try next endpoint
-    }
-  }
-
-  const userId = env.INSTAGRAM_USER_ID;
-  if (userId) {
-    try {
-      const profile = await fetchJsonProfile(
-        `https://i.instagram.com/api/v1/users/${encodeURIComponent(userId)}/info/`,
-        MOBILE_HEADERS,
-        timeoutMs,
-        'Instagram mobile user info',
-      );
-      if (profile) return profile;
-    } catch {
-      // fall through
     }
   }
 
@@ -266,6 +344,8 @@ export async function fetchInstagramWebProfile(username = INSTAGRAM_USERNAME, op
 }
 
 export async function fetchInstagramFollowerCount(username = INSTAGRAM_USERNAME, env = {}, options = {}) {
+  const timeoutMs = options.timeoutMs ?? 6000;
+
   try {
     const graphCount = await fetchInstagramViaGraph(env);
     if (graphCount != null) return graphCount;
@@ -274,7 +354,7 @@ export async function fetchInstagramFollowerCount(username = INSTAGRAM_USERNAME,
   }
 
   try {
-    const profile = await fetchInstagramWebProfile(username, { env, timeoutMs: options.timeoutMs });
+    const profile = await fetchInstagramWebProfile(username, { env, timeoutMs });
     if (profile?.followers != null) return profile.followers;
   } catch {
     // use configured fallback

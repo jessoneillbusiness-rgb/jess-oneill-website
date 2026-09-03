@@ -82,7 +82,7 @@ async function fetchChannelCount(channel, env) {
 export async function onRequestGet(context) {
   const cache = caches.default;
   const cacheUrl = new URL(context.request.url);
-  cacheUrl.searchParams.set('_cache', 'ig-mobile-v1');
+  cacheUrl.searchParams.set('_cache', 'ig-graphql-v1');
   const cacheKey = new Request(cacheUrl, { method: 'GET' });
 
   const cached = await cache.match(cacheKey);
