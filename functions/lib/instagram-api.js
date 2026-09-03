@@ -205,17 +205,7 @@ async function fetchInstagramViaGraphql(username, env, timeoutMs, debug) {
   const userId = env?.INSTAGRAM_USER_ID || INSTAGRAM_USER_ID;
   if (!userId) return null;
 
-  const variables = {
-    id: String(userId),
-    render_surface: 'PROFILE',
-    __relay_internal__pv__PolarisCannesGuardianExperienceEnabledrelayprovider: true,
-    __relay_internal__pv__PolarisCASB976ProfileEnabledrelayprovider: false,
-    __relay_internal__pv__PolarisRepostsConsumptionEnabledrelayprovider: false,
-    __relay_internal__pv__PolarisWebSchoolsEnabledrelayprovider: false,
-    enable_integrity_filters: true,
-  };
-
-  const query = `doc_id=${INSTAGRAM_PROFILE_DOC_ID}&variables=${encodeURIComponent(JSON.stringify(variables))}&server_timestamps=true`;
+  const query = instagramGraphqlQuery(userId);
   const urls = [
     `https://www.instagram.com/graphql/query?${query}`,
     `https://i.instagram.com/graphql/query?${query}`,
@@ -258,7 +248,54 @@ async function fetchInstagramViaGraphql(username, env, timeoutMs, debug) {
   }
 
   if (debug) debug.graphqlError = lastError;
+
+  try {
+    const proxied = await fetchInstagramViaJina(username, query, timeoutMs, debug);
+    if (proxied?.followers != null) return proxied;
+  } catch (error) {
+    if (debug) debug.jinaError = error instanceof Error ? error.message : String(error);
+  }
+
   return null;
+}
+
+function instagramGraphqlQuery(userId) {
+  const variables = {
+    id: String(userId),
+    render_surface: 'PROFILE',
+    __relay_internal__pv__PolarisCannesGuardianExperienceEnabledrelayprovider: true,
+    __relay_internal__pv__PolarisCASB976ProfileEnabledrelayprovider: false,
+    __relay_internal__pv__PolarisRepostsConsumptionEnabledrelayprovider: false,
+    __relay_internal__pv__PolarisWebSchoolsEnabledrelayprovider: false,
+    enable_integrity_filters: true,
+  };
+  return `doc_id=${INSTAGRAM_PROFILE_DOC_ID}&variables=${encodeURIComponent(JSON.stringify(variables))}&server_timestamps=true`;
+}
+
+async function fetchInstagramViaJina(username, query, timeoutMs, debug) {
+  const target = `https://www.instagram.com/graphql/query?${query}`;
+  const response = await withTimeout(
+    fetch(`https://r.jina.ai/${target}`, {
+      headers: {
+        Accept: 'text/plain',
+        'User-Agent': DESKTOP_HEADERS['User-Agent'],
+      },
+    }),
+    timeoutMs,
+    'Instagram Jina proxy',
+  );
+
+  if (debug) debug.jinaStatus = response.status;
+  if (!response.ok) return null;
+
+  const text = await response.text();
+  const jsonStart = text.indexOf('{"data"');
+  if (jsonStart === -1) return null;
+
+  const data = JSON.parse(text.slice(jsonStart));
+  const profile = mapInstagramUser(data?.data?.user, username);
+  if (profile?.followers != null && debug) debug.source = 'jina-graphql';
+  return profile;
 }
 
 async function fetchJsonProfile(url, headers, timeoutMs, label) {

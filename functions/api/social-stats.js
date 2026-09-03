@@ -82,7 +82,7 @@ async function fetchChannelCount(channel, env, options = {}) {
 export async function onRequestGet(context) {
   const cache = caches.default;
   const cacheUrl = new URL(context.request.url);
-  cacheUrl.searchParams.set('_cache', 'ig-graphql-v3');
+  cacheUrl.searchParams.set('_cache', 'ig-graphql-v4');
   const cacheKey = new Request(cacheUrl, { method: 'GET' });
   const debugEnabled = cacheUrl.searchParams.get('debug') === '1';
   const instagramDebug = debugEnabled ? {} : null;
