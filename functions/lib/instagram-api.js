@@ -201,7 +201,7 @@ export async function fetchInstagramViaGraph(env = {}) {
   return null;
 }
 
-async function fetchInstagramViaGraphql(username, env, timeoutMs) {
+async function fetchInstagramViaGraphql(username, env, timeoutMs, debug) {
   const userId = env?.INSTAGRAM_USER_ID || INSTAGRAM_USER_ID;
   if (!userId) return null;
 
@@ -215,27 +215,50 @@ async function fetchInstagramViaGraphql(username, env, timeoutMs) {
     enable_integrity_filters: true,
   };
 
-  const url = `https://www.instagram.com/graphql/query?doc_id=${INSTAGRAM_PROFILE_DOC_ID}&variables=${encodeURIComponent(JSON.stringify(variables))}&server_timestamps=true`;
-  const response = await withTimeout(
-    fetch(url, {
-      headers: {
-        ...DESKTOP_HEADERS,
-        'X-IG-App-ID': INSTAGRAM_APP_ID,
-        Accept: '*/*',
-        Origin: 'https://www.instagram.com',
-        Referer: `https://www.instagram.com/${username}/`,
-        'Sec-Fetch-Site': 'same-origin',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Dest': 'empty',
-      },
-    }),
-    timeoutMs,
-    'Instagram GraphQL profile',
-  );
+  const query = `doc_id=${INSTAGRAM_PROFILE_DOC_ID}&variables=${encodeURIComponent(JSON.stringify(variables))}&server_timestamps=true`;
+  const urls = [
+    `https://www.instagram.com/graphql/query?${query}`,
+    `https://i.instagram.com/graphql/query?${query}`,
+  ];
 
-  if (!response.ok) return null;
-  const data = await response.json();
-  return mapInstagramUser(data?.data?.user, username);
+  const headers = {
+    ...DESKTOP_HEADERS,
+    'X-IG-App-ID': INSTAGRAM_APP_ID,
+    Accept: '*/*',
+    Origin: 'https://www.instagram.com',
+    Referer: `https://www.instagram.com/${username}/`,
+    'Sec-Fetch-Site': 'same-origin',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Dest': 'empty',
+  };
+
+  let lastError = null;
+  for (const url of urls) {
+    try {
+      const response = await withTimeout(
+        fetch(url, { headers }),
+        timeoutMs,
+        'Instagram GraphQL profile',
+      );
+      if (debug) debug.graphqlStatus = response.status;
+      if (!response.ok) {
+        lastError = `HTTP ${response.status}`;
+        continue;
+      }
+      const data = await response.json();
+      const profile = mapInstagramUser(data?.data?.user, username);
+      if (profile?.followers != null) {
+        if (debug) debug.source = 'graphql';
+        return profile;
+      }
+      lastError = 'missing follower_count';
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+    }
+  }
+
+  if (debug) debug.graphqlError = lastError;
+  return null;
 }
 
 async function fetchJsonProfile(url, headers, timeoutMs, label) {
@@ -246,14 +269,15 @@ async function fetchJsonProfile(url, headers, timeoutMs, label) {
 }
 
 export async function fetchInstagramWebProfile(username = INSTAGRAM_USERNAME, options = {}) {
-  const timeoutMs = options.timeoutMs ?? 6000;
+  const timeoutMs = options.timeoutMs ?? 12000;
   const env = options.env ?? {};
+  const debug = options.debug ?? null;
 
   try {
-    const graphqlProfile = await fetchInstagramViaGraphql(username, env, timeoutMs);
+    const graphqlProfile = await fetchInstagramViaGraphql(username, env, timeoutMs, debug);
     if (graphqlProfile?.followers != null) return graphqlProfile;
-  } catch {
-    // try mobile / HTML endpoints
+  } catch (error) {
+    if (debug) debug.graphqlError = error instanceof Error ? error.message : String(error);
   }
 
   const igHeaders = {
@@ -308,21 +332,26 @@ export async function fetchInstagramWebProfile(username = INSTAGRAM_USERNAME, op
 }
 
 export async function fetchInstagramFollowerCount(username = INSTAGRAM_USERNAME, env = {}, options = {}) {
-  const timeoutMs = options.timeoutMs ?? 6000;
+  const timeoutMs = options.timeoutMs ?? 12000;
+  const debug = options.debug ?? null;
 
   try {
     const graphCount = await fetchInstagramViaGraph(env);
-    if (graphCount != null) return graphCount;
-  } catch {
-    // try public endpoints
+    if (graphCount != null) {
+      if (debug) debug.source = 'meta-graph';
+      return graphCount;
+    }
+  } catch (error) {
+    if (debug) debug.graphError = error instanceof Error ? error.message : String(error);
   }
 
   try {
-    const profile = await fetchInstagramWebProfile(username, { env, timeoutMs });
+    const profile = await fetchInstagramWebProfile(username, { env, timeoutMs, debug });
     if (profile?.followers != null) return profile.followers;
-  } catch {
-    // use configured fallback
+  } catch (error) {
+    if (debug) debug.webError = error instanceof Error ? error.message : String(error);
   }
 
+  if (debug) debug.source = 'fallback';
   return resolveInstagramFollowers(env);
 }

@@ -62,11 +62,11 @@ async function fetchFacebook(env) {
   return null;
 }
 
-async function fetchChannelCount(channel, env) {
+async function fetchChannelCount(channel, env, options = {}) {
   try {
     switch (channel.id) {
       case 'instagram':
-        return await fetchInstagramFollowerCount(channel.username, env);
+        return await fetchInstagramFollowerCount(channel.username, env, options);
       case 'tiktok':
         return await fetchTikTok(channel.username);
       case 'facebook':
@@ -82,17 +82,22 @@ async function fetchChannelCount(channel, env) {
 export async function onRequestGet(context) {
   const cache = caches.default;
   const cacheUrl = new URL(context.request.url);
-  cacheUrl.searchParams.set('_cache', 'ig-graphql-v2');
+  cacheUrl.searchParams.set('_cache', 'ig-graphql-v3');
   const cacheKey = new Request(cacheUrl, { method: 'GET' });
+  const debugEnabled = cacheUrl.searchParams.get('debug') === '1';
+  const instagramDebug = debugEnabled ? {} : null;
 
   const cached = await cache.match(cacheKey);
-  if (cached) {
+  if (cached && !debugEnabled) {
     return cached;
   }
 
   const results = await Promise.all(
     CHANNELS.map(async (channel) => {
-      const count = await fetchChannelCount(channel, context.env);
+      const count = await fetchChannelCount(channel, context.env, {
+        timeoutMs: 12000,
+        debug: channel.id === 'instagram' ? instagramDebug : null,
+      });
       return { id: channel.id, name: channel.name, count };
     }),
   );
@@ -106,6 +111,7 @@ export async function onRequestGet(context) {
     channels: results,
     total,
     updatedAt: new Date().toISOString(),
+    ...(instagramDebug ? { instagramDebug } : {}),
   });
 
   const response = new Response(body, {
