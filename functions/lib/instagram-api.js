@@ -46,14 +46,6 @@ function withTimeout(promise, timeoutMs, label) {
   ]);
 }
 
-function headerCookies(headers) {
-  if (typeof headers.getSetCookie === 'function') {
-    return headers.getSetCookie();
-  }
-  const raw = headers.get('set-cookie');
-  return raw ? [raw] : [];
-}
-
 export function parseCompactCount(value) {
   const match = String(value ?? '')
     .trim()
@@ -209,36 +201,10 @@ export async function fetchInstagramViaGraph(env = {}) {
   return null;
 }
 
-async function fetchInstagramSession(timeoutMs) {
-  const response = await withTimeout(
-    fetch('https://www.instagram.com/', {
-      headers: {
-        ...DESKTOP_HEADERS,
-        Accept: 'text/html,application/xhtml+xml',
-      },
-    }),
-    timeoutMs,
-    'Instagram session',
-  );
-
-  const html = await response.text();
-  const cookie = headerCookies(response.headers)
-    .map((value) => String(value).split(';')[0])
-    .filter(Boolean)
-    .join('; ');
-  const csrf =
-    (html.match(/"csrf_token":"([^"]+)"/) || [])[1] ||
-    (cookie.match(/csrftoken=([^;]+)/) || [])[1] ||
-    '';
-
-  return { cookie, csrf };
-}
-
 async function fetchInstagramViaGraphql(username, env, timeoutMs) {
   const userId = env?.INSTAGRAM_USER_ID || INSTAGRAM_USER_ID;
   if (!userId) return null;
 
-  const session = await fetchInstagramSession(timeoutMs);
   const variables = {
     id: String(userId),
     render_surface: 'PROFILE',
@@ -255,11 +221,9 @@ async function fetchInstagramViaGraphql(username, env, timeoutMs) {
       headers: {
         ...DESKTOP_HEADERS,
         'X-IG-App-ID': INSTAGRAM_APP_ID,
-        'X-CSRFToken': session.csrf,
         Accept: '*/*',
         Origin: 'https://www.instagram.com',
         Referer: `https://www.instagram.com/${username}/`,
-        Cookie: session.cookie,
         'Sec-Fetch-Site': 'same-origin',
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Dest': 'empty',
