@@ -1,5 +1,6 @@
 const CONTACTS_KEY = 'outreach:contacts';
 const DRAFTS_KEY = 'outreach:drafts';
+const CREATORS_KEY = 'outreach:saved-creators';
 
 function requireKv(env) {
   if (!env.OUTREACH_KV) {
@@ -42,6 +43,16 @@ export async function listDrafts(env) {
 export async function saveDrafts(env, drafts) {
   const kv = requireKv(env);
   await writeJson(kv, DRAFTS_KEY, drafts);
+}
+
+export async function listSavedCreators(env) {
+  const kv = requireKv(env);
+  return readJson(kv, CREATORS_KEY, []);
+}
+
+export async function saveSavedCreators(env, creators) {
+  const kv = requireKv(env);
+  await writeJson(kv, CREATORS_KEY, creators);
 }
 
 export function newId() {

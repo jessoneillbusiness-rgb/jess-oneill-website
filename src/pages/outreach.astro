@@ -145,22 +145,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <article class="outreach-panel">
             <h2 class="outreach-panel__heading">Find brands from sponsored Instagram posts</h2>
             <p class="outreach-panel__hint">
-              Paste US creator handles (one per line). We scan recent posts for paid partnership signals like
-              <code>#ad</code>, <code>#sponsored</code>, and brand tags, then look up PR emails from the
-              researched list and brand websites. Brands with an email can go straight to a draft; others
-              are saved as leads so you can add an email later.
+              Add new US creator handles above (one per line), or leave the box empty to rescan the saved
+              list. We look for paid partnership signals like <code>#ad</code>, <code>#sponsored</code>,
+              and brand tags, then look up PR emails. New handles are saved below for the next scan.
+              Saved creators are selected by default — uncheck anyone you want to skip.
             </p>
             <form id="discover-form" class="outreach-form">
               <label class="outreach-field">
-                <span>Creator Instagram handles</span>
+                <span>Add new Instagram handles</span>
                 <textarea
                   id="discover-usernames"
-                  rows="6"
-                  placeholder="creatorone&#10;creatortwo&#10;creatorthree"
+                  rows="4"
+                  placeholder="creatorone&#10;creatortwo"
                 ></textarea>
               </label>
+              <div class="outreach-saved-creators" id="discover-saved">
+                <div class="outreach-panel__toolbar">
+                  <h3 class="outreach-panel__subheading">Saved creators</h3>
+                  <label class="outreach-inline-check">
+                    <input type="checkbox" id="discover-saved-select-all" checked />
+                    <span>Select all</span>
+                  </label>
+                </div>
+                <p id="discover-saved-empty" class="outreach-panel__hint">
+                  No saved creators yet. Add handles above and scan to keep them for next time.
+                </p>
+                <ul id="discover-saved-list" class="outreach-creator-list" hidden></ul>
+              </div>
               <div class="outreach-field">
-                <button type="submit" class="btn btn--primary" id="discover-scan">Scan for brand leads</button>
+                <button type="submit" class="btn btn--primary" id="discover-scan">Scan selected creators</button>
               </div>
             </form>
           </article>

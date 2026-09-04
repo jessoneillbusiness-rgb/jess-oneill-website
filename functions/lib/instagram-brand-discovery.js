@@ -27,7 +27,7 @@ const SKIP_USERNAMES = new Set([
   'x',
 ]);
 
-const MAX_CREATORS_PER_SCAN = 8;
+export const MAX_CREATORS_PER_SCAN = 8;
 const MAX_POSTS_PER_CREATOR = 24;
 
 export function normalizeInstagramUsername(value) {

@@ -39,6 +39,22 @@ type DiscoveryResult = {
   scannedCount: number;
   brandCount: number;
   emailCount?: number;
+  savedCreators?: SavedCreator[];
+  added?: string[];
+  skipped?: string[];
+};
+
+type SavedCreator = {
+  username: string;
+  addedAt: string;
+  lastScannedAt?: string | null;
+  lastOk?: boolean | null;
+  lastError?: string | null;
+  lastBrandsFound?: number;
+  lastSponsoredPosts?: number;
+  scanCount?: number;
+  totalBrandsFound?: number;
+  score?: number;
 };
 
 type Draft = {
@@ -74,6 +90,9 @@ const discoverResultsBody = document.getElementById('discover-results-body')!;
 const discoverSummary = document.getElementById('discover-summary')!;
 const discoverImportBtn = document.getElementById('discover-import') as HTMLButtonElement;
 const discoverSelectAll = document.getElementById('discover-select-all') as HTMLInputElement;
+const discoverSavedList = document.getElementById('discover-saved-list')!;
+const discoverSavedEmpty = document.getElementById('discover-saved-empty')!;
+const discoverSavedSelectAll = document.getElementById('discover-saved-select-all') as HTMLInputElement;
 
 const TEST_CONTACT = {
   name: 'Matthew Roberts',
@@ -105,6 +124,8 @@ let resendEnabled = false;
 const selectedContactIds = new Set<string>();
 let discoveryBrands: BrandLead[] = [];
 const selectedBrandKeys = new Set<string>();
+let savedCreators: SavedCreator[] = [];
+const selectedSavedUsernames = new Set<string>();
 
 async function api<T>(url: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(url, {
@@ -164,14 +185,16 @@ async function checkAuth() {
 }
 
 async function loadData() {
-  const [contactsRes, draftsRes, configRes] = await Promise.all([
+  const [contactsRes, draftsRes, configRes, discoverRes] = await Promise.all([
     api<{ contacts: Contact[] }>('/api/outreach/contacts'),
     api<{ drafts: Draft[] }>('/api/outreach/drafts'),
     api<{ resendEnabled: boolean }>('/api/outreach/config').catch(() => ({ resendEnabled: false })),
+    api<{ creators: SavedCreator[] }>('/api/outreach/discover').catch(() => ({ creators: [] })),
   ]);
   contacts = contactsRes.contacts;
   drafts = draftsRes.drafts;
   resendEnabled = configRes.resendEnabled;
+  setSavedCreators(discoverRes.creators ?? []);
   renderContacts();
   renderDrafts();
   renderSent();
@@ -592,6 +615,98 @@ function brandKey(brand: BrandLead) {
   return brand.brandUsername || brand.creators[0]?.postUrl || brand.brandName;
 }
 
+function setSavedCreators(next: SavedCreator[]) {
+  const previous = new Set(savedCreators.map((creator) => creator.username));
+  const isFirstLoad = savedCreators.length === 0 && selectedSavedUsernames.size === 0;
+  savedCreators = next;
+
+  if (isFirstLoad) {
+    selectedSavedUsernames.clear();
+    next.forEach((creator) => selectedSavedUsernames.add(creator.username));
+  } else {
+    for (const creator of next) {
+      if (!previous.has(creator.username)) selectedSavedUsernames.add(creator.username);
+    }
+    for (const username of [...selectedSavedUsernames]) {
+      if (!next.some((creator) => creator.username === username)) {
+        selectedSavedUsernames.delete(username);
+      }
+    }
+  }
+
+  renderSavedCreators();
+}
+
+function formatSavedScan(creator: SavedCreator) {
+  if (!creator.lastScannedAt) return 'Not scanned yet';
+  const when = new Date(creator.lastScannedAt).toLocaleString();
+  if (creator.lastOk === false) return `Failed ${when}`;
+  const brands = creator.lastBrandsFound ?? 0;
+  return `${brands} brand${brands === 1 ? '' : 's'} last scan · ${when}`;
+}
+
+function renderSavedCreators() {
+  const hasSaved = savedCreators.length > 0;
+  discoverSavedEmpty.hidden = hasSaved;
+  discoverSavedList.hidden = !hasSaved;
+  discoverSavedSelectAll.disabled = !hasSaved;
+  discoverSavedSelectAll.checked =
+    hasSaved && selectedSavedUsernames.size === savedCreators.length && savedCreators.length > 0;
+
+  if (!hasSaved) {
+    discoverSavedList.innerHTML = '';
+    return;
+  }
+
+  discoverSavedList.innerHTML = savedCreators
+    .map((creator) => {
+      const checked = selectedSavedUsernames.has(creator.username) ? 'checked' : '';
+      const score = creator.score ?? 0;
+      return `
+        <li>
+          <input type="checkbox" data-saved-username="${escapeAttr(creator.username)}" ${checked} aria-label="Include @${escapeAttr(creator.username)}" />
+          <div>
+            <div class="outreach-creator-list__handle">@${escapeHtml(creator.username)}</div>
+            <div class="outreach-creator-list__meta">
+              <span class="outreach-badge outreach-badge--score">Score ${score}</span>
+              <span>${escapeHtml(formatSavedScan(creator))}</span>
+            </div>
+          </div>
+          <button type="button" class="outreach-link-btn" data-remove-creator="${escapeAttr(creator.username)}">Remove</button>
+        </li>
+      `;
+    })
+    .join('');
+
+  discoverSavedList.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+    input.addEventListener('change', (event) => {
+      const target = event.target as HTMLInputElement;
+      const username = target.dataset.savedUsername!;
+      if (target.checked) selectedSavedUsernames.add(username);
+      else selectedSavedUsernames.delete(username);
+      discoverSavedSelectAll.checked =
+        savedCreators.length > 0 && selectedSavedUsernames.size === savedCreators.length;
+    });
+  });
+
+  discoverSavedList.querySelectorAll('[data-remove-creator]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const username = (button as HTMLButtonElement).dataset.removeCreator!;
+      if (!confirm(`Remove @${username} from saved creators?`)) return;
+      try {
+        const result = await api<{ creators: SavedCreator[] }>('/api/outreach/discover', {
+          method: 'POST',
+          body: JSON.stringify({ action: 'remove', username }),
+        });
+        setSavedCreators(result.creators ?? []);
+        showAlert(`Removed @${username}.`);
+      } catch (error) {
+        showAlert(error instanceof Error ? error.message : 'Could not remove creator', 'error');
+      }
+    });
+  });
+}
+
 function renderDiscoveryResults(result: DiscoveryResult) {
   discoveryBrands = result.brands;
   selectedBrandKeys.clear();
@@ -661,9 +776,10 @@ function renderDiscoveryResults(result: DiscoveryResult) {
 
 discoverForm.addEventListener('submit', async (event) => {
   event.preventDefault();
-  const usernames = discoverUsernames.value.trim();
-  if (!usernames) {
-    showAlert('Add at least one creator handle.', 'error');
+  const added = discoverUsernames.value.trim();
+  const selectedUsernames = [...selectedSavedUsernames];
+  if (!added && selectedUsernames.length === 0) {
+    showAlert('Select saved creators below, or add new handles to scan.', 'error');
     return;
   }
 
@@ -673,16 +789,35 @@ discoverForm.addEventListener('submit', async (event) => {
   try {
     const result = await api<DiscoveryResult>('/api/outreach/discover', {
       method: 'POST',
-      body: JSON.stringify({ action: 'scan', usernames }),
+      body: JSON.stringify({
+        action: 'scan',
+        usernames: added,
+        selectedUsernames,
+      }),
     });
+    if (result.savedCreators) setSavedCreators(result.savedCreators);
+    if (added) discoverUsernames.value = '';
     renderDiscoveryResults(result);
-    showAlert(`Scan complete. Found ${result.brandCount} potential brand(s)${result.emailCount ? `, ${result.emailCount} with a PR email` : ''}.`);
+    const skipped = result.skipped?.length
+      ? ` Skipped ${result.skipped.length} extra handle(s) this pass (max 8).`
+      : '';
+    showAlert(
+      `Scan complete. Found ${result.brandCount} potential brand(s)${result.emailCount ? `, ${result.emailCount} with a PR email` : ''}.${skipped}`,
+    );
   } catch (error) {
     showAlert(error instanceof Error ? error.message : 'Scan failed', 'error');
   } finally {
     discoverScanBtn.disabled = false;
-    discoverScanBtn.textContent = 'Scan for brand leads';
+    discoverScanBtn.textContent = 'Scan selected creators';
   }
+});
+
+discoverSavedSelectAll.addEventListener('change', () => {
+  selectedSavedUsernames.clear();
+  if (discoverSavedSelectAll.checked) {
+    savedCreators.forEach((creator) => selectedSavedUsernames.add(creator.username));
+  }
+  renderSavedCreators();
 });
 
 discoverSelectAll.addEventListener('change', () => {

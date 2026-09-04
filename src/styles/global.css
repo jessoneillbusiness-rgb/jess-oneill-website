@@ -1902,9 +1902,60 @@ p {
   color: #9a6700;
 }
 
-.outreach-badge--email {
-  background: #e8f6ee;
-  color: #0f6b38;
+.outreach-panel__subheading {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.outreach-inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.outreach-saved-creators {
+  margin: 0.25rem 0 1rem;
+}
+
+.outreach-creator-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.outreach-creator-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.outreach-creator-list li:first-child {
+  border-top: 0;
+}
+
+.outreach-creator-list__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.outreach-creator-list__handle {
+  font-weight: 700;
+}
+
+.outreach-badge--score {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 @media (max-width: 768px) {

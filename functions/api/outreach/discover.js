@@ -3,10 +3,23 @@ import { enrichDiscoveredBrands } from '../../lib/brand-contact-enrichment.js';
 import {
   brandLeadToContact,
   discoverBrandsFromCreators,
+  MAX_CREATORS_PER_SCAN,
   normalizeInstagramUsername,
 } from '../../lib/instagram-brand-discovery.js';
 import { generateDraftsForContacts } from '../../lib/outreach-drafts.js';
-import { listContacts, newId, saveContacts } from '../../lib/outreach-store.js';
+import { applyCreatorScan, sortSavedCreators } from '../../lib/saved-creators.js';
+import { listContacts, listSavedCreators, newId, saveContacts, saveSavedCreators } from '../../lib/outreach-store.js';
+
+export async function onRequestGet(context) {
+  if (!(await isAuthenticated(context.request, context.env))) return authError();
+
+  try {
+    const creators = sortSavedCreators(await listSavedCreators(context.env));
+    return json({ creators });
+  } catch (error) {
+    return json({ error: error.message || 'Could not load saved creators' }, 503);
+  }
+}
 
 export async function onRequestPost(context) {
   if (!(await isAuthenticated(context.request, context.env))) return authError();
@@ -20,20 +33,47 @@ export async function onRequestPost(context) {
 
   try {
     if (body.action === 'scan') {
-      const usernames = parseUsernames(body.usernames);
-      if (!usernames.length) {
-        return json({ error: 'Add at least one Instagram username to scan' }, 400);
+      const added = parseUsernames(body.usernames);
+      const selected = parseUsernames(body.selectedUsernames);
+      const toScan = [...new Set([...added, ...selected])];
+
+      if (!toScan.length) {
+        return json({ error: 'Select saved creators below, or add new handles to scan' }, 400);
       }
 
-      const result = await discoverBrandsFromCreators(usernames, { timeoutMs: 6000 });
+      const scannedUsernames = toScan.slice(0, MAX_CREATORS_PER_SCAN);
+      const skipped = toScan.slice(MAX_CREATORS_PER_SCAN);
+
+      const result = await discoverBrandsFromCreators(scannedUsernames, { timeoutMs: 6000 });
       const brands = await enrichDiscoveredBrands(result.brands, { timeoutMs: 4000, maxScrapes: 8 });
       const emailCount = brands.filter((brand) => brand.email).length;
+
+      const existing = await listSavedCreators(context.env);
+      const creators = applyCreatorScan(existing, {
+        added,
+        scanned: result.creators,
+      });
+      await saveSavedCreators(context.env, creators);
 
       return json({
         ...result,
         brands,
         emailCount,
+        savedCreators: creators,
+        added,
+        skipped,
       });
+    }
+
+    if (body.action === 'remove') {
+      const username = normalizeInstagramUsername(body.username);
+      if (!username) return json({ error: 'Missing Instagram username' }, 400);
+
+      const creators = sortSavedCreators(
+        (await listSavedCreators(context.env)).filter((creator) => creator.username !== username),
+      );
+      await saveSavedCreators(context.env, creators);
+      return json({ removed: username, creators });
     }
 
     if (body.action === 'import') {
