@@ -39,6 +39,13 @@ export function domainSlug(domain) {
   return slugifyBrand(parts.slice(0, -1).join(''));
 }
 
+export function guessBrandDomains(handle) {
+  const slug = slugifyBrand(handle);
+  if (!slug || slug.length < 5) return [];
+  if (String(handle ?? '').includes('.')) return [];
+  return [`${slug}.com`, `${slug}.co`];
+}
+
 export function brandKeysMatch(candidate, known) {
   const candidateValues = [candidate?.name, candidate?.handle].filter(Boolean);
   const knownValues = [known?.name, known?.handle, known?.domain && domainSlug(known.domain)].filter(

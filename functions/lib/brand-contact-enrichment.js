@@ -3,6 +3,7 @@
  */
 
 import { findBrandEmailOverride } from './brand-pr-overrides.js';
+import { guessBrandDomains } from './brand-match.js';
 import { findTargetBrand } from './target-brand-list.js';
 
 const BROWSER_HEADERS = {
@@ -228,19 +229,21 @@ export async function enrichBrandContacts(domain, options = {}) {
   }
 
   const timeoutMs = options.timeoutMs ?? 5000;
+  const minScore = options.minScore ?? 0;
   const pagesChecked = [];
   const collected = [];
-
-  const urls = [
+  const paths = options.paths ?? PRESS_PATHS;
+  const urlList = [
     `https://www.${normalizedDomain}`,
     `https://${normalizedDomain}`,
-    ...PRESS_PATHS.flatMap((path) => [
+    ...paths.flatMap((path) => [
       `https://www.${normalizedDomain}${path}`,
       `https://${normalizedDomain}${path}`,
     ]),
   ];
+  const maxUrls = options.maxUrls ?? urlList.length;
 
-  for (const url of urls) {
+  for (const url of urlList.slice(0, maxUrls)) {
     try {
       const html = await fetchPage(url, timeoutMs);
       if (!html) continue;
@@ -252,7 +255,7 @@ export async function enrichBrandContacts(domain, options = {}) {
     }
   }
 
-  const ranked = rankEmails(collected, normalizedDomain);
+  const ranked = rankEmails(collected, normalizedDomain).filter((entry) => entry.score >= minScore);
   return {
     domain: normalizedDomain,
     emails: ranked,
@@ -276,15 +279,16 @@ export async function enrichBrandList(brands, options = {}) {
   return results;
 }
 
-const MAX_DISCOVERY_SCRAPES = 8;
+const MAX_DISCOVERY_SCRAPES = 6;
+const DISCOVERY_PRESS_PATHS = ['/press', '/pages/press', '/contact', '/pages/contact', '/media'];
 
 /**
  * Attach a PR email to Instagram-discovered brands.
- * Overrides win immediately. Website scrape runs only when a known domain exists.
+ * Overrides win immediately. Otherwise scrape a known or guessed brand domain.
  */
 export async function enrichDiscoveredBrands(brands, options = {}) {
   const maxScrapes = options.maxScrapes ?? MAX_DISCOVERY_SCRAPES;
-  const timeoutMs = options.timeoutMs ?? 4000;
+  const timeoutMs = options.timeoutMs ?? 2500;
   let scrapesUsed = 0;
   const results = [];
 
@@ -313,31 +317,41 @@ export async function enrichDiscoveredBrands(brands, options = {}) {
       continue;
     }
 
-    if (target?.domain && scrapesUsed < maxScrapes) {
-      scrapesUsed += 1;
-      try {
-        const scraped = await enrichBrandContacts(target.domain, { timeoutMs });
-        results.push(
-          withDiscoveryEmail(brand, {
-            email: scraped.bestEmail ?? '',
-            emailSource: scraped.bestEmail ? 'website' : null,
-            emailNotes: '',
-            brandName: target.name,
-            category: target.category ?? '',
-            domain: target.domain,
-          }),
-        );
-        continue;
-      } catch {
-        results.push(
-          withDiscoveryEmail(brand, {
-            brandName: target.name,
-            category: target.category ?? '',
-            domain: target.domain,
-          }),
-        );
-        continue;
+    const guessed = guessBrandDomains(brand.instagramHandle || brand.brandUsername);
+    const domains = [...new Set([target?.domain, ...guessed].filter(Boolean))];
+
+    if (domains.length && scrapesUsed < maxScrapes) {
+      let found = null;
+      for (const domain of domains) {
+        if (scrapesUsed >= maxScrapes) break;
+        scrapesUsed += 1;
+        try {
+          const scraped = await enrichBrandContacts(domain, {
+            timeoutMs,
+            maxUrls: 5,
+            minScore: 80,
+            paths: DISCOVERY_PRESS_PATHS,
+          });
+          if (scraped.bestEmail) {
+            found = { ...scraped, domain };
+            break;
+          }
+        } catch {
+          // try next domain
+        }
       }
+
+      results.push(
+        withDiscoveryEmail(brand, {
+          email: found?.bestEmail ?? '',
+          emailSource: found?.bestEmail ? 'website' : null,
+          emailNotes: '',
+          brandName: target?.name || brand.brandName,
+          category: target?.category ?? '',
+          domain: found?.domain || target?.domain || domains[0] || '',
+        }),
+      );
+      continue;
     }
 
     results.push(

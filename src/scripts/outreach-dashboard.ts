@@ -42,6 +42,8 @@ type DiscoveryResult = {
   savedCreators?: SavedCreator[];
   added?: string[];
   skipped?: string[];
+  imported?: number;
+  drafted?: number;
 };
 
 type SavedCreator = {
@@ -798,12 +800,23 @@ discoverForm.addEventListener('submit', async (event) => {
     if (result.savedCreators) setSavedCreators(result.savedCreators);
     if (added) discoverUsernames.value = '';
     renderDiscoveryResults(result);
+    await loadData();
     const skipped = result.skipped?.length
       ? ` Skipped ${result.skipped.length} extra handle(s) this pass (max 8).`
       : '';
-    showAlert(
-      `Scan complete. Found ${result.brandCount} potential brand(s)${result.emailCount ? `, ${result.emailCount} with a PR email` : ''}.${skipped}`,
-    );
+    const imported = result.imported ?? 0;
+    const drafted = result.drafted ?? 0;
+    const emailCount = result.emailCount ?? 0;
+    const parts = [
+      `Scan complete. Found ${result.brandCount} potential brand(s).`,
+      imported ? `Saved ${imported} to Contacts.` : '',
+      emailCount ? `${emailCount} PR email(s) found.` : 'No PR emails found yet — add them on the Contacts tab.',
+      drafted ? `Created ${drafted} draft(s).` : '',
+      skipped,
+    ].filter(Boolean);
+    showAlert(parts.join(' '));
+    if (drafted) activateTab('drafts');
+    else if (imported) activateTab('contacts');
   } catch (error) {
     showAlert(error instanceof Error ? error.message : 'Scan failed', 'error');
   } finally {
@@ -848,9 +861,10 @@ discoverImportBtn.addEventListener('click', async () => {
     discoverSelectAll.checked = false;
     discoverImportBtn.disabled = true;
     await loadData();
+    const imported = result.imported ?? 0;
     const drafted = result.drafted ?? 0;
-    const leadCount = Math.max(0, result.imported - drafted);
-    const parts = [`Saved ${result.imported} brand(s).`];
+    const leadCount = Math.max(0, imported - drafted);
+    const parts = [`Saved ${imported} brand(s).`];
     if (drafted) parts.push(`Created ${drafted} draft(s).`);
     if (leadCount) parts.push(`${leadCount} still need a PR email.`);
     showAlert(parts.join(' '));

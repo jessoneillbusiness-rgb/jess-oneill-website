@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { domainSlug, slugifyBrand, slugsLooselyMatch } from '../functions/lib/brand-match.js';
+import { domainSlug, guessBrandDomains, slugifyBrand, slugsLooselyMatch } from '../functions/lib/brand-match.js';
 import { findBrandEmailOverride } from '../functions/lib/brand-pr-overrides.js';
 import { findTargetBrand } from '../functions/lib/target-brand-list.js';
 import { enrichDiscoveredBrands } from '../functions/lib/brand-contact-enrichment.js';
@@ -18,6 +18,13 @@ test('domainSlug drops the public suffix', () => {
   assert.equal(domainSlug('saiehello.com'), 'saiehello');
   assert.equal(domainSlug('gruns.co'), 'gruns');
   assert.equal(domainSlug('us.laneige.com'), 'uslaneige');
+});
+
+test('guessBrandDomains uses handle.com for commercial handles', () => {
+  assert.deepEqual(guessBrandDomains('elfcosmetics'), ['elfcosmetics.com', 'elfcosmetics.co']);
+  assert.deepEqual(guessBrandDomains('vinted'), ['vinted.com', 'vinted.co']);
+  assert.deepEqual(guessBrandDomains('amanda.pulitano'), []);
+  assert.deepEqual(guessBrandDomains('love'), []);
 });
 
 test('slugsLooselyMatch accepts handle prefixes', () => {

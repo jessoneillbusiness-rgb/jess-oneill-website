@@ -159,6 +159,9 @@ export const TARGET_BRANDS = [
   { name: 'Sol de Janeiro', domain: 'soldejaneiro.com', category: 'Beauty' },
   { name: 'Dyson beauty', domain: 'dyson.com', category: 'Beauty' },
   { name: 'Briogeo', domain: 'briogeohair.com', category: 'Beauty' },
+  { name: 'e.l.f. Cosmetics', domain: 'elfcosmetics.com', category: 'Beauty' },
+  { name: 'Target', domain: 'target.com', category: 'Lifestyle' },
+  { name: 'Vinted', domain: 'vinted.com', category: 'Fashion' },
 ];
 
 export function findTargetBrand(name, handle = '') {

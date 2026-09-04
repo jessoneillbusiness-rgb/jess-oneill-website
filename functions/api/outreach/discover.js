@@ -1,14 +1,13 @@
 import { authError, isAuthenticated, json } from '../../lib/outreach-auth.js';
 import { enrichDiscoveredBrands } from '../../lib/brand-contact-enrichment.js';
 import {
-  brandLeadToContact,
   discoverBrandsFromCreators,
   MAX_CREATORS_PER_SCAN,
   normalizeInstagramUsername,
 } from '../../lib/instagram-brand-discovery.js';
-import { generateDraftsForContacts } from '../../lib/outreach-drafts.js';
+import { upsertDiscoveredBrands } from '../../lib/discovered-contacts.js';
 import { applyCreatorScan, sortSavedCreators } from '../../lib/saved-creators.js';
-import { listContacts, listSavedCreators, newId, saveContacts, saveSavedCreators } from '../../lib/outreach-store.js';
+import { listSavedCreators, saveSavedCreators } from '../../lib/outreach-store.js';
 
 export async function onRequestGet(context) {
   if (!(await isAuthenticated(context.request, context.env))) return authError();
@@ -45,8 +44,6 @@ export async function onRequestPost(context) {
       const skipped = toScan.slice(MAX_CREATORS_PER_SCAN);
 
       const result = await discoverBrandsFromCreators(scannedUsernames, { timeoutMs: 6000 });
-      const brands = await enrichDiscoveredBrands(result.brands, { timeoutMs: 4000, maxScrapes: 8 });
-      const emailCount = brands.filter((brand) => brand.email).length;
 
       const existing = await listSavedCreators(context.env);
       const creators = applyCreatorScan(existing, {
@@ -55,6 +52,13 @@ export async function onRequestPost(context) {
       });
       await saveSavedCreators(context.env, creators);
 
+      const withOverrides = await enrichDiscoveredBrands(result.brands, { maxScrapes: 0 });
+      const firstSave = await upsertDiscoveredBrands(context.env, withOverrides, { generateDrafts: true });
+
+      const brands = await enrichDiscoveredBrands(result.brands, { timeoutMs: 2000, maxScrapes: 4 });
+      const saved = await upsertDiscoveredBrands(context.env, brands, { generateDrafts: true });
+      const emailCount = brands.filter((brand) => brand.email).length;
+
       return json({
         ...result,
         brands,
@@ -62,6 +66,8 @@ export async function onRequestPost(context) {
         savedCreators: creators,
         added,
         skipped,
+        imported: firstSave.imported,
+        drafted: firstSave.drafted + saved.drafted,
       });
     }
 
@@ -82,65 +88,16 @@ export async function onRequestPost(context) {
         return json({ error: 'No brands selected to import' }, 400);
       }
 
-      const contacts = await listContacts(context.env);
-      const created = [];
-
-      for (const brand of brands) {
-        const lead = brandLeadToContact(brand);
-        const handle = normalizeInstagramUsername(lead.instagramHandle);
-        const companyKey = String(lead.company ?? '').trim().toLowerCase();
-        const emailKey = String(lead.email ?? '')
-          .trim()
-          .toLowerCase();
-
-        const duplicate = contacts.find((contact) => {
-          if (emailKey && contact.email && contact.email === emailKey) return true;
-          const existingHandle = normalizeInstagramUsername(contact.instagramHandle);
-          if (handle && existingHandle && handle === existingHandle) return true;
-          return (
-            companyKey &&
-            String(contact.company ?? '').trim().toLowerCase() === companyKey &&
-            contact.source === 'instagram-discovery'
-          );
-        });
-
-        if (duplicate) {
-          if (emailKey && !duplicate.email) {
-            duplicate.email = emailKey;
-            duplicate.isLead = false;
-            duplicate.name = duplicate.name || lead.name || 'PR Team';
-            duplicate.category = duplicate.category || lead.category;
-            duplicate.notes = lead.notes;
-            duplicate.updatedAt = new Date().toISOString();
-            created.push(duplicate);
-          }
-          continue;
-        }
-
-        contacts.push({
-          id: newId(),
-          ...lead,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-        created.push(contacts[contacts.length - 1]);
-      }
-
-      await saveContacts(context.env, contacts);
-
-      const generateDrafts = body.generateDrafts !== false;
-      const draftable = created.filter((contact) => contact.email && !contact.isLead);
-      const drafts =
-        generateDrafts && draftable.length
-          ? await generateDraftsForContacts(context.env, draftable)
-          : [];
+      const saved = await upsertDiscoveredBrands(context.env, brands, {
+        generateDrafts: body.generateDrafts !== false,
+      });
 
       return json(
         {
-          imported: created.length,
-          contacts: created,
-          drafted: drafts.length,
-          drafts,
+          imported: saved.imported,
+          contacts: saved.contacts,
+          drafted: saved.drafted,
+          drafts: saved.drafts,
         },
         201,
       );

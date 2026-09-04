@@ -145,10 +145,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <article class="outreach-panel">
             <h2 class="outreach-panel__heading">Find brands from sponsored Instagram posts</h2>
             <p class="outreach-panel__hint">
-              Add new US creator handles above (one per line), or leave the box empty to rescan the saved
-              list. We look for paid partnership signals like <code>#ad</code>, <code>#sponsored</code>,
-              and brand tags, then look up PR emails. New handles are saved below for the next scan.
-              Saved creators are selected by default — uncheck anyone you want to skip.
+              Add new US creator handles, or leave the box empty to rescan the saved list. A scan finds
+              sponsored brands, saves them to Contacts, and looks up PR emails from the researched list
+              and brand websites. Brands with an email also get a draft. Saved creators below are
+              selected by default — uncheck anyone you want to skip.
             </p>
             <form id="discover-form" class="outreach-form">
               <label class="outreach-field">
@@ -182,7 +182,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div class="outreach-panel__toolbar">
               <h2 class="outreach-panel__heading">Potential brands</h2>
               <button type="button" class="btn btn--primary" id="discover-import" disabled>
-                Save selected and generate drafts
+                Generate drafts for selected
               </button>
             </div>
             <p id="discover-summary" class="outreach-panel__hint"></p>
