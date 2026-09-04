@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { domainSlug, slugifyBrand, slugsLooselyMatch } from './brand-match.js';
-import { findBrandEmailOverride } from './brand-pr-overrides.js';
-import { findTargetBrand } from './target-brand-list.js';
-import { enrichDiscoveredBrands } from './brand-contact-enrichment.js';
-import { analyzeCreatorPosts, brandLeadToContact } from './instagram-brand-discovery.js';
-import { mapIphoneMediaToTimelineEdge } from './instagram-api.js';
+import { domainSlug, slugifyBrand, slugsLooselyMatch } from '../functions/lib/brand-match.js';
+import { findBrandEmailOverride } from '../functions/lib/brand-pr-overrides.js';
+import { findTargetBrand } from '../functions/lib/target-brand-list.js';
+import { enrichDiscoveredBrands } from '../functions/lib/brand-contact-enrichment.js';
+import { analyzeCreatorPosts, brandLeadToContact } from '../functions/lib/instagram-brand-discovery.js';
+import { mapIphoneMediaToTimelineEdge } from '../functions/lib/instagram-api.js';
 
 test('slugifyBrand strips punctuation and diacritics', () => {
   assert.equal(slugifyBrand("Paula's Choice"), 'paulaschoice');
