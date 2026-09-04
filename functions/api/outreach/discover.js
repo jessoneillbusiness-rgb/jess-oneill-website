@@ -1,9 +1,11 @@
 import { authError, isAuthenticated, json } from '../../lib/outreach-auth.js';
+import { enrichDiscoveredBrands } from '../../lib/brand-contact-enrichment.js';
 import {
   brandLeadToContact,
   discoverBrandsFromCreators,
   normalizeInstagramUsername,
 } from '../../lib/instagram-brand-discovery.js';
+import { generateDraftsForContacts } from '../../lib/outreach-drafts.js';
 import { listContacts, newId, saveContacts } from '../../lib/outreach-store.js';
 
 export async function onRequestPost(context) {
@@ -24,7 +26,14 @@ export async function onRequestPost(context) {
       }
 
       const result = await discoverBrandsFromCreators(usernames, { timeoutMs: 6000 });
-      return json(result);
+      const brands = await enrichDiscoveredBrands(result.brands, { timeoutMs: 4000, maxScrapes: 8 });
+      const emailCount = brands.filter((brand) => brand.email).length;
+
+      return json({
+        ...result,
+        brands,
+        emailCount,
+      });
     }
 
     if (body.action === 'import') {
@@ -40,8 +49,12 @@ export async function onRequestPost(context) {
         const lead = brandLeadToContact(brand);
         const handle = normalizeInstagramUsername(lead.instagramHandle);
         const companyKey = String(lead.company ?? '').trim().toLowerCase();
+        const emailKey = String(lead.email ?? '')
+          .trim()
+          .toLowerCase();
 
         const duplicate = contacts.find((contact) => {
+          if (emailKey && contact.email && contact.email === emailKey) return true;
           const existingHandle = normalizeInstagramUsername(contact.instagramHandle);
           if (handle && existingHandle && handle === existingHandle) return true;
           return (
@@ -51,7 +64,18 @@ export async function onRequestPost(context) {
           );
         });
 
-        if (duplicate) continue;
+        if (duplicate) {
+          if (emailKey && !duplicate.email) {
+            duplicate.email = emailKey;
+            duplicate.isLead = false;
+            duplicate.name = duplicate.name || lead.name || 'PR Team';
+            duplicate.category = duplicate.category || lead.category;
+            duplicate.notes = lead.notes;
+            duplicate.updatedAt = new Date().toISOString();
+            created.push(duplicate);
+          }
+          continue;
+        }
 
         contacts.push({
           id: newId(),
@@ -63,7 +87,23 @@ export async function onRequestPost(context) {
       }
 
       await saveContacts(context.env, contacts);
-      return json({ imported: created.length, contacts: created }, 201);
+
+      const generateDrafts = body.generateDrafts !== false;
+      const draftable = created.filter((contact) => contact.email && !contact.isLead);
+      const drafts =
+        generateDrafts && draftable.length
+          ? await generateDraftsForContacts(context.env, draftable)
+          : [];
+
+      return json(
+        {
+          imported: created.length,
+          contacts: created,
+          drafted: drafts.length,
+          drafts,
+        },
+        201,
+      );
     }
 
     return json({ error: 'Unsupported action' }, 400);

@@ -1,13 +1,8 @@
 /**
- * Discover brand partnership leads from Instagram creator profiles (unofficial web API).
+ * Discover brand partnership leads from Instagram creator profiles.
  */
 
-const BROWSER_HEADERS = {
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Accept-Language': 'en-US,en;q=0.9',
-  Accept: '*/*',
-};
+import { fetchInstagramTimeline } from './instagram-api.js';
 
 const SPONSOR_PATTERNS = [
   /\#ad\b/i,
@@ -35,15 +30,6 @@ const SKIP_USERNAMES = new Set([
 const MAX_CREATORS_PER_SCAN = 8;
 const MAX_POSTS_PER_CREATOR = 24;
 
-function withTimeout(promise, timeoutMs, label) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      setTimeout(() => reject(new Error(`${label} timed out`)), timeoutMs);
-    }),
-  ]);
-}
-
 export function normalizeInstagramUsername(value) {
   return String(value ?? '')
     .trim()
@@ -51,119 +37,11 @@ export function normalizeInstagramUsername(value) {
     .toLowerCase();
 }
 
-function mapInstagramUser(user, fallbackUsername) {
-  if (!user) return null;
-
-  return {
-    username: user.username ?? fallbackUsername,
-    fullName: user.full_name ?? '',
-    timeline: user.edge_owner_to_timeline_media?.edges ?? [],
-  };
-}
-
-function parseInstagramTimelineFromHtml(html) {
-  const marker = '"edge_owner_to_timeline_media":';
-  const start = html.indexOf(marker);
-  if (start === -1) return [];
-
-  const edgesMarker = '"edges":[';
-  const edgesStart = html.indexOf(edgesMarker, start);
-  if (edgesStart === -1) return [];
-
-  const arrayStart = edgesStart + edgesMarker.length - 1;
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-
-  for (let index = arrayStart; index < html.length; index += 1) {
-    const char = html[index];
-
-    if (inString) {
-      if (escaped) escaped = false;
-      else if (char === '\\') escaped = true;
-      else if (char === '"') inString = false;
-      continue;
-    }
-
-    if (char === '"') {
-      inString = true;
-      continue;
-    }
-
-    if (char === '[') depth += 1;
-    if (char === ']') {
-      depth -= 1;
-      if (depth === 0) {
-        try {
-          const edges = JSON.parse(html.slice(arrayStart, index + 1));
-          return Array.isArray(edges) ? edges : [];
-        } catch {
-          return [];
-        }
-      }
-    }
-  }
-
-  return [];
-}
-
 export async function fetchCreatorTimeline(username, options = {}) {
-  const normalized = normalizeInstagramUsername(username);
-  if (!normalized) return null;
-
-  const timeoutMs = options.timeoutMs ?? 5000;
-  const apiUrls = [
-    `https://i.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(normalized)}`,
-    `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(normalized)}`,
-  ];
-
-  const headers = {
-    ...BROWSER_HEADERS,
-    'X-IG-App-ID': '936619743392459',
-    Referer: `https://www.instagram.com/${normalized}/`,
-    Origin: 'https://www.instagram.com',
-  };
-
-  for (const url of apiUrls) {
-    try {
-      const response = await withTimeout(fetch(url, { headers }), timeoutMs, 'Instagram profile');
-      if (!response.ok) continue;
-
-      const data = await response.json();
-      const profile = mapInstagramUser(data?.data?.user, normalized);
-      if (profile?.timeline?.length) return profile;
-    } catch {
-      // try next endpoint
-    }
-  }
-
-  try {
-    const response = await withTimeout(
-      fetch(`https://www.instagram.com/${encodeURIComponent(normalized)}/`, {
-        headers: {
-          ...BROWSER_HEADERS,
-          Accept: 'text/html,application/xhtml+xml',
-          Referer: 'https://www.instagram.com/',
-        },
-      }),
-      timeoutMs,
-      'Instagram HTML profile',
-    );
-
-    if (!response.ok) return null;
-
-    const html = await response.text();
-    const timeline = parseInstagramTimelineFromHtml(html);
-    if (!timeline.length) return null;
-
-    return {
-      username: normalized,
-      fullName: '',
-      timeline,
-    };
-  } catch {
-    return null;
-  }
+  return fetchInstagramTimeline(username, {
+    timeoutMs: options.timeoutMs ?? 6000,
+    count: options.maxPosts ?? MAX_POSTS_PER_CREATOR,
+  });
 }
 
 function captionHasSponsorSignal(caption) {
@@ -207,7 +85,7 @@ function formatBrandName(username, fullName) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function analyzeCreatorPosts(profile, maxPosts = MAX_POSTS_PER_CREATOR) {
+export function analyzeCreatorPosts(profile, maxPosts = MAX_POSTS_PER_CREATOR) {
   const creatorUsername = normalizeInstagramUsername(profile.username);
   const brandMap = new Map();
 
@@ -225,10 +103,7 @@ function analyzeCreatorPosts(profile, maxPosts = MAX_POSTS_PER_CREATOR) {
 
     if (!isSponsored) continue;
 
-    const brandUsernames = new Set([
-      ...tagged,
-      ...extractMentionedUsernames(caption),
-    ]);
+    const brandUsernames = new Set([...tagged, ...extractMentionedUsernames(caption)]);
 
     const candidates = [...brandUsernames].filter((username) =>
       isLikelyBrand(username, creatorUsername),
@@ -340,26 +215,34 @@ export function brandLeadToContact(brand) {
     .slice(0, 3)
     .map((item) => item.postUrl)
     .join('\n');
+  const email = String(brand.email ?? '').trim();
+  const emailNote = email
+    ? brand.emailSource === 'override'
+      ? `PR email from researched list${brand.emailNotes ? ` — ${brand.emailNotes}` : ''}.`
+      : brand.emailSource === 'website'
+        ? 'PR email found on the brand website.'
+        : `PR email: ${email}.`
+    : 'PR email not found yet — add manually when ready.';
 
   const notes = [
     brand.instagramHandle ? `Instagram: https://www.instagram.com/${brand.instagramHandle}/` : '',
     `Seen in sponsored posts from ${creatorList}.`,
     primary?.captionSnippet ? `Caption: ${primary.captionSnippet}` : '',
     postLinks ? `Posts:\n${postLinks}` : '',
-    'PR email not found yet — add manually when ready.',
+    emailNote,
   ]
     .filter(Boolean)
     .join('\n\n');
 
   return {
-    name: '',
-    email: '',
+    name: email ? 'PR Team' : '',
+    email,
     company: brand.brandName || formatBrandName(brand.brandUsername),
     role: 'PR / Partnerships',
-    category: '',
+    category: brand.category ?? '',
     notes,
     instagramHandle: brand.instagramHandle,
-    isLead: true,
+    isLead: !email,
     source: 'instagram-discovery',
   };
 }

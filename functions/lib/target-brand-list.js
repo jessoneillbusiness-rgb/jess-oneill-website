@@ -3,6 +3,8 @@
  * category is used when importing outreach contacts.
  */
 
+import { brandKeysMatch } from './brand-match.js';
+
 export const TARGET_BRANDS = [
   { name: 'Saie', domain: 'saiehello.com', category: 'Beauty' },
   { name: 'Rhode', domain: 'rhodeskin.com', category: 'Beauty' },
@@ -158,3 +160,12 @@ export const TARGET_BRANDS = [
   { name: 'Dyson beauty', domain: 'dyson.com', category: 'Beauty' },
   { name: 'Briogeo', domain: 'briogeohair.com', category: 'Beauty' },
 ];
+
+export function findTargetBrand(name, handle = '') {
+  for (const brand of TARGET_BRANDS) {
+    if (brandKeysMatch({ name, handle }, { name: brand.name, domain: brand.domain })) {
+      return brand;
+    }
+  }
+  return null;
+}

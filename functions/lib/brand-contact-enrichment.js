@@ -2,6 +2,9 @@
  * Find likely PR / partnership emails from brand websites (no paid API).
  */
 
+import { findBrandEmailOverride } from './brand-pr-overrides.js';
+import { findTargetBrand } from './target-brand-list.js';
+
 const BROWSER_HEADERS = {
   'User-Agent':
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -271,4 +274,92 @@ export async function enrichBrandList(brands, options = {}) {
     });
   }
   return results;
+}
+
+const MAX_DISCOVERY_SCRAPES = 8;
+
+/**
+ * Attach a PR email to Instagram-discovered brands.
+ * Overrides win immediately. Website scrape runs only when a known domain exists.
+ */
+export async function enrichDiscoveredBrands(brands, options = {}) {
+  const maxScrapes = options.maxScrapes ?? MAX_DISCOVERY_SCRAPES;
+  const timeoutMs = options.timeoutMs ?? 4000;
+  let scrapesUsed = 0;
+  const results = [];
+
+  for (const brand of brands) {
+    if (brand?.isUnknown) {
+      results.push(withDiscoveryEmail(brand));
+      continue;
+    }
+
+    const target = findTargetBrand(brand.brandName, brand.instagramHandle);
+    const override =
+      (target && findBrandEmailOverride(target.name, brand.instagramHandle)) ||
+      findBrandEmailOverride(brand.brandName, brand.instagramHandle);
+
+    if (override?.email) {
+      results.push(
+        withDiscoveryEmail(brand, {
+          email: override.email,
+          emailSource: 'override',
+          emailNotes: override.notes ?? '',
+          brandName: override.name || target?.name || brand.brandName,
+          category: target?.category ?? '',
+          domain: target?.domain ?? '',
+        }),
+      );
+      continue;
+    }
+
+    if (target?.domain && scrapesUsed < maxScrapes) {
+      scrapesUsed += 1;
+      try {
+        const scraped = await enrichBrandContacts(target.domain, { timeoutMs });
+        results.push(
+          withDiscoveryEmail(brand, {
+            email: scraped.bestEmail ?? '',
+            emailSource: scraped.bestEmail ? 'website' : null,
+            emailNotes: '',
+            brandName: target.name,
+            category: target.category ?? '',
+            domain: target.domain,
+          }),
+        );
+        continue;
+      } catch {
+        results.push(
+          withDiscoveryEmail(brand, {
+            brandName: target.name,
+            category: target.category ?? '',
+            domain: target.domain,
+          }),
+        );
+        continue;
+      }
+    }
+
+    results.push(
+      withDiscoveryEmail(brand, {
+        brandName: target?.name || brand.brandName,
+        category: target?.category ?? '',
+        domain: target?.domain ?? '',
+      }),
+    );
+  }
+
+  return results;
+}
+
+function withDiscoveryEmail(brand, extra = {}) {
+  return {
+    ...brand,
+    brandName: extra.brandName || brand.brandName,
+    email: extra.email ?? '',
+    emailSource: extra.emailSource ?? null,
+    emailNotes: extra.emailNotes ?? '',
+    category: extra.category ?? brand.category ?? '',
+    domain: extra.domain ?? brand.domain ?? '',
+  };
 }

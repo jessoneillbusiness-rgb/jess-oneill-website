@@ -3,6 +3,8 @@
  * Used when website scraping misses or returns junk.
  */
 
+import { brandKeysMatch } from './brand-match.js';
+
 export const BRAND_EMAIL_OVERRIDES = {
   Saie: { email: 'community@saiehello.com', notes: 'Influencer/community inbox. PR: desiree@saiehello.com' },
   Merit: { email: 'press@meritbeauty.com', notes: 'Alt influencer: community@meritbeauty.com' },
@@ -81,14 +83,33 @@ export const BRAND_EMAIL_OVERRIDES = {
   'Fenty Beauty': { email: 'press@fentybeauty.com', notes: 'If added later' },
 };
 
+export function findBrandEmailOverride(brandName, handle = '') {
+  const exact = BRAND_EMAIL_OVERRIDES[brandName];
+  if (exact?.email) return { name: brandName, ...exact };
+
+  for (const [name, override] of Object.entries(BRAND_EMAIL_OVERRIDES)) {
+    if (!override?.email) continue;
+    if (
+      brandKeysMatch(
+        { name: brandName, handle },
+        { name, handle: name },
+      )
+    ) {
+      return { name, ...override };
+    }
+  }
+
+  return null;
+}
+
 export function applyBrandEmailOverride(brandName, result) {
-  const override = BRAND_EMAIL_OVERRIDES[brandName];
+  const override = findBrandEmailOverride(brandName, result?.instagramHandle);
   if (!override?.email) return result;
 
   return {
     ...result,
     bestEmail: override.email,
-    emails: [{ email: override.email, score: 999, source: 'manual' }, ...result.emails],
+    emails: [{ email: override.email, score: 999, source: 'manual' }, ...(result.emails ?? [])],
     notes: override.notes,
     source: 'manual+website',
   };

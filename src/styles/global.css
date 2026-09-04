@@ -1902,6 +1902,11 @@ p {
   color: #9a6700;
 }
 
+.outreach-badge--email {
+  background: #e8f6ee;
+  color: #0f6b38;
+}
+
 @media (max-width: 768px) {
   .nav-toggle {
     display: block;

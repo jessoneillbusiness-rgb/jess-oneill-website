@@ -1,6 +1,6 @@
 import { authError, isAuthenticated, json } from '../../lib/outreach-auth.js';
-import { buildDraftEmail } from '../../lib/outreach-templates.js';
-import { listContacts, listDrafts, newId, saveDrafts } from '../../lib/outreach-store.js';
+import { generateDraftsForContacts } from '../../lib/outreach-drafts.js';
+import { listContacts, listDrafts, saveDrafts } from '../../lib/outreach-store.js';
 
 export async function onRequestGet(context) {
   if (!(await isAuthenticated(context.request, context.env))) return authError();
@@ -29,46 +29,15 @@ export async function onRequestPost(context) {
 
   try {
     const contacts = await listContacts(context.env);
-    const drafts = await listDrafts(context.env);
 
     if (body.action === 'generate') {
       const contactIds = Array.isArray(body.contactIds) ? body.contactIds : [];
-      const regenerate = body.regenerate === true;
-      const created = [];
-
-      for (const contactId of contactIds) {
-        const contact = contacts.find((item) => item.id === contactId);
-        if (!contact || contact.isLead || !contact.email) continue;
-
-        const existingPendingIndex = drafts.findIndex(
-          (item) => item.contactId === contactId && item.status === 'pending',
-        );
-        if (existingPendingIndex !== -1) {
-          if (!regenerate) {
-            created.push(drafts[existingPendingIndex]);
-            continue;
-          }
-          drafts.splice(existingPendingIndex, 1);
-        }
-
-        const template = await buildDraftEmail(contact, context.env);
-        const draft = {
-          id: newId(),
-          contactId,
-          contactEmail: contact.email,
-          contactName: contact.name,
-          contactCompany: contact.company,
-          status: 'pending',
-          subject: template.subject,
-          body: template.body,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        drafts.push(draft);
-        created.push(draft);
-      }
-
-      await saveDrafts(context.env, drafts);
+      const selected = contactIds
+        .map((contactId) => contacts.find((item) => item.id === contactId))
+        .filter(Boolean);
+      const created = await generateDraftsForContacts(context.env, selected, {
+        regenerate: body.regenerate === true,
+      });
       return json({ drafts: created }, 201);
     }
 

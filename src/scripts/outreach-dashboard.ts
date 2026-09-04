@@ -26,6 +26,11 @@ type BrandLead = {
   creators: BrandCreatorRef[];
   postCount: number;
   isUnknown?: boolean;
+  email?: string;
+  emailSource?: 'override' | 'website' | null;
+  emailNotes?: string;
+  category?: string;
+  domain?: string;
 };
 
 type DiscoveryResult = {
@@ -33,6 +38,7 @@ type DiscoveryResult = {
   creators: Array<{ username: string; ok: boolean; error?: string; brandsFound?: number }>;
   scannedCount: number;
   brandCount: number;
+  emailCount?: number;
 };
 
 type Draft = {
@@ -600,12 +606,13 @@ function renderDiscoveryResults(result: DiscoveryResult) {
     )
     .join(' · ');
 
-  discoverSummary.textContent = `Scanned ${result.scannedCount} creator(s). Found ${result.brandCount} potential brand(s). ${creatorSummary}`;
+  const emailCount = result.emailCount ?? result.brands.filter((brand) => brand.email).length;
+  discoverSummary.textContent = `Scanned ${result.scannedCount} creator(s). Found ${result.brandCount} potential brand(s), ${emailCount} with a PR email. ${creatorSummary}`;
   discoverResultsPanel.hidden = false;
 
   if (discoveryBrands.length === 0) {
     discoverResultsBody.innerHTML =
-      '<tr><td colspan="6" class="outreach-empty">No sponsored brand posts found. Try different creators.</td></tr>';
+      '<tr><td colspan="7" class="outreach-empty">No sponsored brand posts found. Try different creators.</td></tr>';
     return;
   }
 
@@ -618,6 +625,9 @@ function renderDiscoveryResults(result: DiscoveryResult) {
       const instagramCell = brand.instagramHandle
         ? `<a href="${escapeAttr(brand.brandUrl)}" target="_blank" rel="noopener noreferrer">@${escapeHtml(brand.instagramHandle)}</a>`
         : '—';
+      const emailCell = brand.email
+        ? `<span class="outreach-badge outreach-badge--email">${escapeHtml(brand.email)}</span>`
+        : '<span class="outreach-badge outreach-badge--lead">Add email</span>';
       const postCell = creator
         ? `<a href="${escapeAttr(creator.postUrl)}" target="_blank" rel="noopener noreferrer">View post</a>`
         : '—';
@@ -626,6 +636,7 @@ function renderDiscoveryResults(result: DiscoveryResult) {
         <tr>
           <td><input type="checkbox" data-brand-key="${escapeAttr(key)}" ${brand.isUnknown ? 'disabled' : ''} /></td>
           <td>${escapeHtml(brand.brandName)}</td>
+          <td>${emailCell}</td>
           <td>${instagramCell}</td>
           <td>${escapeHtml(seenWith)}</td>
           <td>${postCell}</td>
@@ -665,7 +676,7 @@ discoverForm.addEventListener('submit', async (event) => {
       body: JSON.stringify({ action: 'scan', usernames }),
     });
     renderDiscoveryResults(result);
-    showAlert(`Scan complete. Found ${result.brandCount} potential brand(s).`);
+    showAlert(`Scan complete. Found ${result.brandCount} potential brand(s)${result.emailCount ? `, ${result.emailCount} with a PR email` : ''}.`);
   } catch (error) {
     showAlert(error instanceof Error ? error.message : 'Scan failed', 'error');
   } finally {
@@ -694,16 +705,21 @@ discoverImportBtn.addEventListener('click', async () => {
   if (!brands.length) return;
 
   try {
-    const result = await api<{ imported: number }>('/api/outreach/discover', {
+    const result = await api<{ imported: number; drafted?: number }>('/api/outreach/discover', {
       method: 'POST',
-      body: JSON.stringify({ action: 'import', brands }),
+      body: JSON.stringify({ action: 'import', brands, generateDrafts: true }),
     });
     selectedBrandKeys.clear();
     discoverSelectAll.checked = false;
     discoverImportBtn.disabled = true;
     await loadData();
-    showAlert(`Saved ${result.imported} brand lead(s) to Contacts. Add PR emails when you find them.`);
-    activateTab('contacts');
+    const drafted = result.drafted ?? 0;
+    const leadCount = Math.max(0, result.imported - drafted);
+    const parts = [`Saved ${result.imported} brand(s).`];
+    if (drafted) parts.push(`Created ${drafted} draft(s).`);
+    if (leadCount) parts.push(`${leadCount} still need a PR email.`);
+    showAlert(parts.join(' '));
+    activateTab(drafted ? 'drafts' : 'contacts');
   } catch (error) {
     showAlert(error instanceof Error ? error.message : 'Import failed', 'error');
   }

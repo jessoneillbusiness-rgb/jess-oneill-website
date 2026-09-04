@@ -408,3 +408,157 @@ export async function fetchInstagramFollowerCount(username = INSTAGRAM_USERNAME,
   if (debug) debug.source = 'fallback';
   return resolveInstagramFollowers(env);
 }
+
+/** PolarisProfilePostsQuery — username-based recent posts. */
+export const INSTAGRAM_POSTS_DOC_ID = '34579740524958711';
+
+export function parseProxiedInstagramJson(text) {
+  const source = String(text ?? '');
+  const start = source.indexOf('{');
+  if (start === -1) return null;
+
+  const candidates = [source.slice(start).replace(/\\_/g, '_')];
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      const end = candidate.lastIndexOf('}');
+      if (end > 0) {
+        try {
+          return JSON.parse(candidate.slice(0, end + 1));
+        } catch {
+          // try next
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+export function mapIphoneMediaToTimelineEdge(item) {
+  if (!item?.code) return null;
+
+  const caption = item.caption?.text ?? '';
+  const tagged = [
+    ...(item.usertags?.in ?? []).map((entry) => entry?.user?.username),
+    ...(item.sponsor_tags ?? []).map(
+      (entry) => entry?.sponsor?.username ?? entry?.user?.username,
+    ),
+    ...(item.coauthor_producers ?? []).map((entry) => entry?.username),
+  ].filter(Boolean);
+
+  return {
+    node: {
+      shortcode: item.code,
+      is_paid_partnership: Boolean(item.is_paid_partnership || (item.sponsor_tags ?? []).length),
+      commerciality_status: item.commerciality_status ?? null,
+      edge_media_to_caption: {
+        edges: caption ? [{ node: { text: caption } }] : [],
+      },
+      edge_media_to_tagged_user: {
+        edges: tagged.map((username) => ({ node: { user: { username } } })),
+      },
+    },
+  };
+}
+
+function instagramPostsQuery(username, count = 24) {
+  const variables = {
+    data: {
+      count,
+      include_relationship_info: true,
+      latest_besties_reel_media: true,
+      latest_reel_media: true,
+    },
+    username,
+    __relay_internal__pv__PolarisFeedShareMenurelayprovider: false,
+  };
+  return `doc_id=${INSTAGRAM_POSTS_DOC_ID}&variables=${encodeURIComponent(JSON.stringify(variables))}&server_timestamps=true`;
+}
+
+function timelineFromGraphqlPayload(data) {
+  const edges = data?.data?.xdt_api__v1__feed__user_timeline_graphql_connection?.edges ?? [];
+  return edges.map((edge) => mapIphoneMediaToTimelineEdge(edge?.node)).filter(Boolean);
+}
+
+function timelineFromFeedPayload(data) {
+  const items = data?.items ?? [];
+  return items.map((item) => mapIphoneMediaToTimelineEdge(item)).filter(Boolean);
+}
+
+async function fetchInstagramJson(url, headers, timeoutMs, label) {
+  const response = await withTimeout(fetch(url, { headers }), timeoutMs, label);
+  if (!response.ok) return null;
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json') || contentType.includes('text/plain')) {
+    return response.json();
+  }
+  const text = await response.text();
+  return parseProxiedInstagramJson(text);
+}
+
+export async function fetchInstagramTimeline(username, options = {}) {
+  const normalized = String(username ?? '')
+    .trim()
+    .replace(/^@/, '')
+    .toLowerCase();
+  if (!normalized) return null;
+
+  const timeoutMs = options.timeoutMs ?? 8000;
+  const count = options.count ?? 24;
+  const query = instagramPostsQuery(normalized, count);
+  const graphqlUrl = `https://www.instagram.com/graphql/query?${query}`;
+  const headers = {
+    ...DESKTOP_HEADERS,
+    'X-IG-App-ID': INSTAGRAM_APP_ID,
+    Accept: '*/*',
+    Origin: 'https://www.instagram.com',
+    Referer: `https://www.instagram.com/${normalized}/`,
+    'Sec-Fetch-Site': 'same-origin',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Dest': 'empty',
+  };
+
+  const attempts = [
+    [graphqlUrl, headers, 'Instagram posts GraphQL'],
+    [
+      `https://i.instagram.com/api/v1/feed/user/${encodeURIComponent(normalized)}/username/?count=${count}`,
+      { ...MOBILE_HEADERS, Referer: `https://www.instagram.com/${normalized}/` },
+      'Instagram mobile feed',
+    ],
+    [
+      `https://www.instagram.com/api/v1/feed/user/${encodeURIComponent(normalized)}/username/?count=${count}`,
+      { ...MOBILE_HEADERS, Referer: `https://www.instagram.com/${normalized}/` },
+      'Instagram web feed',
+    ],
+    [
+      `https://urltomarkdown.herokuapp.com/?url=${encodeURIComponent(graphqlUrl)}`,
+      { ...DESKTOP_HEADERS, Accept: 'application/json,text/plain,*/*' },
+      'Instagram posts Heroku proxy',
+    ],
+    [
+      `https://translate.google.com/translate?hl=en&sl=auto&tl=en&u=${encodeURIComponent(graphqlUrl)}`,
+      { ...DESKTOP_HEADERS, Accept: 'text/html,application/json,*/*' },
+      'Instagram posts Translate proxy',
+    ],
+  ];
+
+  for (const [url, requestHeaders, label] of attempts) {
+    try {
+      const data = await fetchInstagramJson(url, requestHeaders, timeoutMs, label);
+      const timeline = timelineFromGraphqlPayload(data);
+      if (timeline.length) {
+        return { username: normalized, fullName: '', timeline };
+      }
+      const feedTimeline = timelineFromFeedPayload(data);
+      if (feedTimeline.length) {
+        return { username: normalized, fullName: data?.user?.username ?? normalized, timeline: feedTimeline };
+      }
+    } catch {
+      // try next source
+    }
+  }
+
+  return null;
+}
