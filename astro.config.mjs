@@ -4,4 +4,7 @@ import { defineConfig } from 'astro/config';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://www.jess-oneill.com',
+  redirects: {
+    '/blog/weekend-in-miami': '/blog/birthday-weekend-in-paris/',
+  },
 });
