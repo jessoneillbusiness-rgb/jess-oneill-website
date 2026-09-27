@@ -4,7 +4,7 @@
  * Facebook uses manual fallback until Meta API access is available.
  */
 
-import { resolveFacebookFollowers } from './social-config.js';
+import { hasFacebookFollowerOverride, resolveFacebookFollowers } from './social-config.js';
 import {
   computeInstagramInsights,
   computeTikTokInsights,
@@ -24,6 +24,11 @@ function withTimeout(promise, timeoutMs, label) {
 }
 
 async function fetchFacebook(env) {
+  if (hasFacebookFollowerOverride(env)) {
+    const manual = resolveFacebookFollowers(env);
+    return manual !== null ? { followers: manual, automated: false } : null;
+  }
+
   const token = env?.FACEBOOK_ACCESS_TOKEN;
   const pageId = env?.FACEBOOK_PAGE_ID || FACEBOOK_PAGE_ID;
 

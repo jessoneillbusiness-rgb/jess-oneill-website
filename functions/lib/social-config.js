@@ -4,7 +4,7 @@
  */
 
 /** Set a number here, or use FACEBOOK_FOLLOWER_COUNT in Cloudflare env vars. */
-export const FACEBOOK_FOLLOWER_FALLBACK = 16500;
+export const FACEBOOK_FOLLOWER_FALLBACK = 20000;
 
 /** Public Instagram count when live GraphQL / Graph API are blocked. */
 export const INSTAGRAM_FOLLOWER_FALLBACK = 19900;
@@ -20,6 +20,11 @@ function resolveCount(fromEnv, fallback) {
   }
 
   return null;
+}
+
+export function hasFacebookFollowerOverride(env = {}) {
+  const fromEnv = env?.FACEBOOK_FOLLOWER_COUNT;
+  return fromEnv !== undefined && fromEnv !== null && String(fromEnv).trim() !== '';
 }
 
 export function resolveFacebookFollowers(env = {}) {
