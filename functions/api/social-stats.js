@@ -5,7 +5,11 @@
  */
 
 import { fetchInstagramFollowerCount, INSTAGRAM_USERNAME } from '../lib/instagram-api.js';
-import { hasFacebookFollowerOverride, resolveFacebookFollowers } from '../lib/social-config.js';
+import {
+  hasFacebookFollowerOverride,
+  INSTAGRAM_FOLLOWER_FALLBACK,
+  resolveFacebookFollowers,
+} from '../lib/social-config.js';
 
 const FACEBOOK_PAGE_ID = '61575124581812';
 
@@ -87,7 +91,7 @@ async function fetchChannelCount(channel, env, options = {}) {
 export async function onRequestGet(context) {
   const cache = caches.default;
   const cacheUrl = new URL(context.request.url);
-  cacheUrl.searchParams.set('_cache', 'ig-graphql-v6');
+  cacheUrl.searchParams.set('_cache', 'ig-graphql-v7');
   cacheUrl.searchParams.set('_fb', String(resolveFacebookFollowers(context.env) ?? ''));
   const cacheKey = new Request(cacheUrl, { method: 'GET' });
   const debugEnabled = cacheUrl.searchParams.get('debug') === '1';
@@ -111,7 +115,9 @@ export async function onRequestGet(context) {
   const available = results.filter((r) => r.count !== null);
   const total = available.reduce((sum, r) => sum + r.count, 0);
   const allSuccess = results.every((r) => r.count !== null);
-  const cacheSeconds = allSuccess ? 120 : 60;
+  const instagram = results.find((channel) => channel.id === 'instagram');
+  const instagramUsedFallback = instagram?.count === INSTAGRAM_FOLLOWER_FALLBACK;
+  const cacheSeconds = allSuccess && !instagramUsedFallback ? 3600 : 60;
 
   const body = JSON.stringify({
     channels: results,
