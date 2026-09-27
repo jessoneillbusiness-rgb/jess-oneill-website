@@ -226,7 +226,10 @@ import { socialChannels } from '../config/site';
     const updatedEl = document.getElementById('media-kit-updated');
 
     try {
-      const response = await fetch('/api/media-metrics', { credentials: 'same-origin' });
+      const response = await fetch('/api/media-metrics', {
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
       if (response.status === 401) return;
       if (!response.ok) throw new Error('Failed to load');
       const data = await response.json();
