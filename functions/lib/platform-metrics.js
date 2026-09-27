@@ -8,7 +8,7 @@ import {
   fetchInstagramViaGraph,
   fetchInstagramWebProfile,
 } from './instagram-api.js';
-import { resolveInstagramFollowers } from './social-config.js';
+import { resolveInstagramFollowers, resolveTikTokFollowers } from './social-config.js';
 import {
   fetchTikTokRecentVideos,
   fetchTikTokUserInfo,
@@ -339,7 +339,7 @@ async function fetchTikTokProfileFromApi(env, timeoutMs) {
 
 export async function fetchTikTokProfile(env = {}, options = {}) {
   const timeoutMs = options.timeoutMs ?? 3500;
-  const manualFollowers = envNumber(env, 'TIKTOK_FOLLOWER_COUNT');
+  const manualFollowers = resolveTikTokFollowers(env);
   const manualLikes = envNumber(env, 'TIKTOK_TOTAL_LIKES');
   const manualVideos = envNumber(env, 'TIKTOK_VIDEO_COUNT');
 
