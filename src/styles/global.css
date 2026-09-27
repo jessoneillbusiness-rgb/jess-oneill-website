@@ -775,9 +775,13 @@ p {
 }
 
 .post-cover {
-  width: 100%;
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 82vh;
   height: auto;
-  margin: 2.5rem 0 3rem;
+  margin: 2.5rem auto 3rem;
+  object-fit: contain;
   border-radius: var(--radius-sm);
 }
 
@@ -840,10 +844,17 @@ p {
 
 .post-content .post-figure img,
 .post-gallery img {
-  width: 100%;
+  display: block;
+  width: auto;
+  max-width: 100%;
   height: auto;
-  margin: 0;
+  margin: 0 auto;
+  object-fit: contain;
   border-radius: var(--radius-sm);
+}
+
+.post-gallery img {
+  width: 100%;
 }
 
 .post-content .post-figure figcaption,
