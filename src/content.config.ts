@@ -13,6 +13,19 @@ const posts = defineCollection({
     imageAlt: z.string().optional(),
     keywords: z.array(z.string()).optional(),
     draft: z.boolean().default(false),
+    restaurant: z
+      .object({
+        name: z.string(),
+        url: z.string(),
+        servesCuisine: z.string().optional(),
+        sameAs: z.array(z.string()).optional(),
+        streetAddress: z.string().optional(),
+        addressLocality: z.string().optional(),
+        postalCode: z.string().optional(),
+        addressCountry: z.string().optional(),
+        telephone: z.string().optional(),
+      })
+      .optional(),
   }),
 });
 
