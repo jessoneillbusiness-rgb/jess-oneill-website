@@ -6,5 +6,6 @@ export default defineConfig({
   site: 'https://www.jess-oneill.com',
   redirects: {
     '/blog/weekend-in-miami': '/blog/birthday-weekend-in-paris/',
+    '/blog/le-taillevent-paris': '/blog/le-taillevent-review/',
   },
 });
