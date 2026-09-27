@@ -4,6 +4,7 @@
 
 import { getMediaMetrics } from '../lib/media-metrics.js';
 import { accessDeniedResponse, hasMediaKitAccess } from '../lib/media-kit-access.js';
+import { resolveFacebookFollowers } from '../lib/social-config.js';
 
 export async function onRequestGet(context) {
   if (!(await hasMediaKitAccess(context.request, context.env))) {
@@ -11,7 +12,9 @@ export async function onRequestGet(context) {
   }
 
   const cache = caches.default;
-  const cacheKey = new Request(context.request.url, { method: 'GET' });
+  const cacheUrl = new URL(context.request.url);
+  cacheUrl.searchParams.set('_fb', String(resolveFacebookFollowers(context.env) ?? ''));
+  const cacheKey = new Request(cacheUrl, { method: 'GET' });
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -21,7 +24,7 @@ export async function onRequestGet(context) {
   const response = new Response(body, {
     headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=3600',
+      'Cache-Control': 'public, max-age=120',
       'Access-Control-Allow-Origin': '*',
     },
   });

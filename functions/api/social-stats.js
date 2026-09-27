@@ -1,10 +1,11 @@
 /**
  * Live social follower counts API (Cloudflare Pages Function)
- * Refreshes from Instagram, TikTok, and Facebook — cached up to 1 hour.
+ * Refreshes from Instagram, TikTok, and Facebook.
+ * FACEBOOK_FOLLOWER_COUNT bypasses this cache when it changes.
  */
 
 import { fetchInstagramFollowerCount, INSTAGRAM_USERNAME } from '../lib/instagram-api.js';
-import { resolveFacebookFollowers } from '../lib/social-config.js';
+import { hasFacebookFollowerOverride, resolveFacebookFollowers } from '../lib/social-config.js';
 
 const FACEBOOK_PAGE_ID = '61575124581812';
 
@@ -42,6 +43,10 @@ async function fetchTikTok(username) {
 }
 
 async function fetchFacebook(env) {
+  if (hasFacebookFollowerOverride(env)) {
+    return resolveFacebookFollowers(env);
+  }
+
   const token = env.FACEBOOK_ACCESS_TOKEN;
   const pageId = env.FACEBOOK_PAGE_ID || FACEBOOK_PAGE_ID;
 
@@ -82,7 +87,8 @@ async function fetchChannelCount(channel, env, options = {}) {
 export async function onRequestGet(context) {
   const cache = caches.default;
   const cacheUrl = new URL(context.request.url);
-  cacheUrl.searchParams.set('_cache', 'ig-graphql-v5');
+  cacheUrl.searchParams.set('_cache', 'ig-graphql-v6');
+  cacheUrl.searchParams.set('_fb', String(resolveFacebookFollowers(context.env) ?? ''));
   const cacheKey = new Request(cacheUrl, { method: 'GET' });
   const debugEnabled = cacheUrl.searchParams.get('debug') === '1';
   const instagramDebug = debugEnabled ? {} : null;
@@ -105,7 +111,7 @@ export async function onRequestGet(context) {
   const available = results.filter((r) => r.count !== null);
   const total = available.reduce((sum, r) => sum + r.count, 0);
   const allSuccess = results.every((r) => r.count !== null);
-  const cacheSeconds = allSuccess ? 3600 : 600;
+  const cacheSeconds = allSuccess ? 120 : 60;
 
   const body = JSON.stringify({
     channels: results,
